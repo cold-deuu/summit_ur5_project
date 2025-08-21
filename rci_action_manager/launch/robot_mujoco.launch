@@ -1,0 +1,10 @@
+<launch>
+  <arg name="pub_mode" default="false"/>
+  <arg name="controller" default="true"/>
+
+  <!--param name="issimulation" type="bool" value="true"/-->
+    
+  <node pkg="rci_action_manager" type="mujoco_launch.py" name="mujoco_summit_ur" output="screen" />
+  <node pkg="rci_action_manager" type="rci_action_manager_simulation" name="rci_action_manager_simulation" output="screen" />
+
+</launch>

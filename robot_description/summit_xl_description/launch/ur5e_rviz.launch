@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="robot_model" default="$(find summit_xl_description)/ur5e_control.urdf"/>
+  
+  <!-- URDF를 ROS parameter server에 등록 -->
+  <param name="robot_description" textfile="$(arg robot_model)" />
+
+  <!-- TF 퍼블리셔 -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+
+  <!-- Joint State Publisher (정적 로봇이면 생략 가능) -->
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"/>
+
+  <!-- RViz 실행 -->
+  <node name="rviz" pkg="rviz" type="rviz"/>
+</launch>

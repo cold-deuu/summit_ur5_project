@@ -1,0 +1,67 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="paused" default="true"/>
+    <!-- Launch Gazebo with empty world-->
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="gui" value="true"/>
+        <arg name="paused" value="$(arg paused)"/>
+    </include >
+    <!-- <arg name="arm_id"      default="panda" doc="Name of the robot to spawn" />
+    <arg name="initial_joint_positions"
+       doc="Initial joint configuration of the panda. Specify as a list of name/value pairs in form of '-J [name-of-joint] [value-in-rad]'. Default is a 90 degree bend in the elbow"
+       default="-J $(arg arm_id)_joint1 0
+                -J $(arg arm_id)_joint2 -0.785398163
+                -J $(arg arm_id)_joint3 0
+                -J $(arg arm_id)_joint4 -2.35619449
+                -J $(arg arm_id)_joint5 0
+                -J $(arg arm_id)_joint6 1.57079632679
+                -J $(arg arm_id)_joint7 0.785398163397
+                -J $(arg arm_id)_finger_joint1 0.001
+                -J $(arg arm_id)_finger_joint2 0.001"
+       /> -->
+    <!-- spawn robot -->
+    <param name="robot_description" textfile="$(find summit_xl_description)/summit_ur5e.urdf" />
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" output="screen">
+    </node>
+    <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" args="-urdf -model robot -file $(find summit_xl_description)/summit_ur5e.urdf"/>
+        
+    <rosparam file="$(find summit_xl_description)/config/controller.yaml" command="load" />
+
+    <node name="controller_spawner" pkg="controller_manager" type="spawner"
+        args="joint_state_controller 
+                ur5e_shoulder_pan_position_controller 
+                ur5e_shoulder_lift_position_controller 
+                ur5e_elbow_position_controller 
+                ur5e_wrist_1_position_controller 
+                ur5e_wrist_2_position_controller 
+                ur5e_wrist_3_position_controller
+                gripper_finger1_controller
+                front_right_wheel_velocity_controller
+                front_left_wheel_velocity_controller
+                back_right_wheel_velocity_controller
+                back_left_wheel_velocity_controller"                
+        output="screen" />
+        
+    <param name="use_sim_time" value="true"/>
+    <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization_node" output="screen">
+        <rosparam command="load" file="$(find summit_xl_description)/config/ekf.yaml" />
+    </node>
+
+    <!-- <rosparam file="$(find trajectory_generator)/sdf/$(arg model_tra).yaml" command="load" ns="Tra"/> -->
+
+    <!-- <node pkg="rci_action_manager" type="rci_action_manager_simulation" name="rci_action_manager_simulation" output="screen">
+    </node>  -->
+    
+    <!-- <arg name="gui" default="True" />
+    <param name="use_gui" value="$(arg gui)" />
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find cdpr_controllers)/rviz/camera.rviz" required="true" /> -->
+    
+    <!-- generate trajectory -->
+
+    <!-- <node pkg="trajectory_generator" type="straight_line" name="trajectory_generator" output="screen"> -->
+    <!-- <node pkg="trajectory_generator" type="platform_server" name="platform_server" output="screen">
+    </node> -->
+    <!-- <node pkg="trajectory_generator" type="jointposture_server" name="jointposture_server" output="screen">
+    </node> -->
+
+</launch>
