@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>rci_action_manager</name>
+  <version>0.0.0</version>
+  <description>Controllers for CDPR</description>
+
+  <maintainer email="leesai2000@khu.ac.kr">Leesai Park</maintainer>
+
+  <license>MIT</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>eigen</build_depend>
+
+  <depend>rci_holistic_controller</depend>
+  <depend>sca_pkg</depend>
+
+  <depend>husky_description</depend>
+
+  <!-- <depend>cdpr</depend> -->
+  <depend>roscpp</depend>
+  <depend>pluginlib</depend>
+  <depend>geometry_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>controller_interface</depend>
+  <depend>std_msgs</depend>
+  <depend>actionlib</depend>
+  <depend>actionlib_msgs</depend>
+  <depend>pinocchio</depend>
+  <depend>tf_conversions</depend>
+  <depend>tf</depend>
+
+  <exec_depend>message_generation</exec_depend>
+
+</package>

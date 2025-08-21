@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- Xacro 파일을 파싱해서 robot_description으로 로드 -->
+  <param name="robot_description" command="$(find xacro)/xacro $(find ur_e_description)/urdf/ur5e.urdf.xacro" />
+
+  <!-- TF를 퍼블리시하는 노드 -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+
+  <!-- Joint 상태를 publish (필요시) -->
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
+
+  <!-- RViz 실행 -->
+  <node name="rviz" pkg="rviz" type="rviz"/>
+</launch>

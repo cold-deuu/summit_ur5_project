@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="roas">
+
+  <xacro:property name="PI" value="3.1415926535897931"/>
+
+  <xacro:include filename="$(find summit_xl_description)/urdf/structures/d435.urdf.xacro"/>
+  <xacro:include filename="$(find summit_xl_description)/urdf/structures/os1.urdf.xacro"/>
+
+  <link name="top_structure">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://summit_xl_description/meshes/structures/top_structure_roas.STL"/>
+      </geometry>
+      <material name="silver">
+        <color rgba="0.75 0.75 0.75 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="-0.29 0 0.75"/>
+      <geometry>
+        <box size="0.09 0.45 0.5"/>
+      </geometry>
+    </collision>
+  </link>
+
+
+  <!-- Sensor -->
+  <xacro:sensor_d435 parent="top_structure" name="camera">
+    <origin xyz="0.402 0 0.433" rpy="0 0 0"/>
+  </xacro:sensor_d435>
+
+  <xacro:sensor_os1 parent="top_structure" name="os_sensor">
+    <origin xyz="-0.2867 0 0.99" rpy="0 0 0"/>
+  </xacro:sensor_os1>
+
+</robot>

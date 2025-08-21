@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro"
+       name="ur5e" >
+
+  <!-- common stuff -->
+  <!--xacro:include filename="$(find ur_e_description)/urdf/common.gazebo.xacro" /-->
+
+  <!-- ur5e -->
+  <xacro:include filename="$(find ur_e_description)/urdf/ur5e.urdf.xacro" />
+  <!--xacro:arg name="kinematics_config" default="$(find ur_e_description)/cfg/default_kinematics.yaml" /-->
+
+
+  <!-- arm -->
+  <!--xacro:ur5e_robot prefix="" joint_limited="false"
+    kinematics_file="$(load_yaml('$(arg kinematics_config)')}" /-->
+  <xacro:ur5e_robot prefix="ur5e_" joint_limited="true"/>
+
+  <!--link name="world" />
+
+  <joint name="world_joint" type="fixed">
+    <parent link="world" />
+    <child link = "base_link" />
+    <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+  </joint-->
+
+  <!-- robotiq 85 gripper xacro -->
+  <xacro:include filename="$(find robotiq_85_description)/urdf/robotiq_85_gripper.urdf.xacro" />
+
+  <xacro:robotiq_85_gripper prefix="" parent="camera_bracket" >
+    <origin xyz="0 0 0.006" rpy="3.1416 -1.5708 0"/>
+  </xacro:robotiq_85_gripper>
+
+  <link name="graps_link"/>
+
+  <joint name="graps_link_joint" type="fixed">
+    <parent link="camera_bracket"/>
+    <child link="graps_link"/>
+    <origin xyz="0 0 0.12" rpy="0 0 0"/>
+  </joint>
+
+  <link name="camera_bracket">
+    <visual>
+      <origin xyz="0 0 0" rpy="1.5708 0 1.5708" />
+      <geometry>
+        <mesh filename="package://summit_xl_description/meshes/structures/camera_bracket.STL"/>
+      </geometry>
+      <material name="silver">
+        <color rgba="0.75 0.75 0.75 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="1.5708 0 1.5708" />
+      <geometry>
+        <mesh filename="package://summit_xl_description/meshes/structures/camera_bracket.STL"/>
+      </geometry>
+    </collision>
+  </link>
+  <!--link name="camera_bracket" type="fixed"/-->
+  <joint name="camera_bracket_joint" type="fixed">
+    <parent link="ur5e_tool0" />
+    <child link = "camera_bracket" />
+    <origin xyz="0 0 0.007" rpy="0 0 0" />
+  </joint>
+
+  <link name="hand_camera_link" type="fixed"/>
+  <joint name="hand_camera_joint" type="fixed">
+    <parent link="camera_bracket" />
+    <child link = "hand_camera_link" />
+    <origin xyz="0.0813 0 0.0239" rpy="0 0 0" />
+  </joint>
+
+</robot>
