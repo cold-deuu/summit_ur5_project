@@ -45,6 +45,17 @@
 #include <rci_holistic_controller/trajectory/SE3_cubic.hpp>
 #include <rci_holistic_controller/trajectory/joint_cubic.hpp>
 
+// RCI HOLISTIC CONTROLLER : TASK
+#include <rci_holistic_controller/task/task_se3_equality.hpp>
+#include <rci_holistic_controller/task/task_sca_inequality.hpp>
+#include <rci_holistic_controller/task/task_base_fix_equality.hpp>
+
+// #include <rci_holistic_controller/task/task_joint_posture.hpp>
+
+// RCI HOLISTIC CONTROLLER : CONSTRAINT
+#include <rci_holistic_controller/constraint/constraint_equality.hpp>
+#include <rci_holistic_controller/constraint/constraint_inequality.hpp>
+
 
 // SUMMIT UR5 SELF COLLISION AVOIDANCE
 #include <sca_pkg/ur5e_sca_manager/ur5e_sca_manager.hpp>
@@ -73,7 +84,6 @@ namespace RobotController{
             SE3 oMi();
             VectorXd get_result();
             void update_joint(Eigen::VectorXd q,  Eigen::VectorXd v);
-            void update_ft(Eigen::VectorXd ft);
 
             // Control : SE3
             void initControl(SE3 target, ros::Duration duration, bool rel);
@@ -87,12 +97,6 @@ namespace RobotController{
             // Gravity Compensation
             VectorXd gravity_compensation();
 
-            // Admittance Controller
-            void initAdmittance();
-            void AdmittanceControl();
-            void AdmittanceControl_v2();
-            Eigen::VectorXd compute_wrench();
-
 
         private:
             std::shared_ptr<holistic_controller::robot::RobotWrapper> robot_;
@@ -100,6 +104,13 @@ namespace RobotController{
             std::shared_ptr<holistic_controller::trajectory::SE3CubicTrajectory> se3Ref_;
             std::shared_ptr<holistic_controller::trajectory::JointCubicTrajectory> jointRef_;
             std::shared_ptr<rci_summit_ur5_controller::SummitUR5_ScaManager> summitUr5_scaManager_;
+ 
+            // Test : Task
+            std::shared_ptr<chanhqp::task::TaskSE3Equality> se3Task_;
+            std::shared_ptr<chanhqp::task::TaskSCAInequality> scaTask_;
+            std::shared_ptr<chanhqp::task::TaskBaseFixEquality> baseFixTask_;
+
+
             pinocchio::Model model_;
             pinocchio::Data data_;
 
@@ -113,21 +124,9 @@ namespace RobotController{
 
             SE3 oMi_;
             VectorXd q_des_;
-            VectorXd desired_;
 
-            // Admittance Controller            
-            // FT Sensor
-            VectorXd ft_sensor_; // Global
-            MatrixXd Damping_;
-            
-            SE3 init_admittance_;
-            VectorXd qdot_prev_;
-            MatrixXd mass_;
-            VectorXd nle_;
-
-            // V2
-            VectorXd des_twist_;
-            MatrixXd M_a_, D_a_;
+            // Edit : 250911
+            State state_;
     
 
 

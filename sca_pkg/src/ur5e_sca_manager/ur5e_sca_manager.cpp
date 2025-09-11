@@ -6,7 +6,7 @@ namespace rci_summit_ur5_controller
     {
         // Learning Weights Loading 
         std::string path_to_resPkg = ros::package::getPath("sca_pkg");
-        std::string pkg_to_resFoldfer = "/result/result_txt";
+        std::string pkg_to_resFoldfer = "/result/result_txt2";
         std::string path_to_res1_weight = "/l1_weight.txt";
         std::string path_to_res1_bias = "/l1_bias.txt";
         std::string path_to_res2_weight = "/l2_weight.txt";

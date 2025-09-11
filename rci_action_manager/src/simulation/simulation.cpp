@@ -17,8 +17,6 @@ int main(int argc, char ** argv){
     ros::init(argc, argv, "hqp_husky_franka");
     ros::NodeHandle nh;
     ros::Subscriber jointState = nh.subscribe("/mujoco/joint_states", 5, &jointStateCallback, ros::TransportHints().tcpNoDelay(true));
-    ros::Subscriber ftSensor = nh.subscribe("/mujoco/ft_sensor", 5, &FTSensorCallback, ros::TransportHints().tcpNoDelay(true));
-    
     summit_ur5_publisher_ = nh.advertise<std_msgs::Float64MultiArray>("/mujoco_ctrl",1);
     
     // Robot Wrapper
@@ -52,7 +50,6 @@ int main(int argc, char ** argv){
 
 
     J_.resize(6,nv);
-    ft_sensor_.resize(6);
     q_.setZero(9);
     v_.setZero(9);
 
@@ -66,58 +63,29 @@ int main(int argc, char ** argv){
     qpub = q_;
     bool controlFlag_ = false;
 
-    admit_flag_ = false;
-    init_admit_=  true;
 
+
+    std::cout<<"Error Here "<<std::endl;
     while(ros::ok()){
         if (robot_ok_)
         {
           ctrl_->update_joint(q_, v_);
-          ctrl_->update_ft(ft_sensor_);
-          // std::cout<<"Force Torque Sensor :"<<ft_sensor_.transpose()<<std::endl;
           se3_server_->compute(ros::Time::now());
           joint_posture_server_->compute(ros::Time::now());
           
 
 
           if(!se3_server_ ->isrunning() && !joint_posture_server_->isrunning())
-          {
-            if(admit_flag_)
-            {            
-              if (init_admit_)
-              {
-                ctrl_->initAdmittance();
-                init_admit_ = false;
-              }
-              else
-              {
-                ctrl_->AdmittanceControl();
-                // ctrl_->AdmittanceControl_v2();
-
-              }
-              qpub = ctrl_->get_result();
-              // std::cout<<"---------Admittance Control-----------"<<std::endl;
-            }
-            else{
-              qpub = qpub;
-            }
-
-          }
-            // qpub = qpub;
+            qpub = qpub;
           else
           {
-            admit_flag_ = true;
             qpub = ctrl_->get_result();
           }
-          
-
-          // std::cout<<"Q Pub :"<<qpub.transpose()<<std::endl;
-
+        
           std_msgs::Float64MultiArray msg;
           for(int i=0; i<qpub.size(); i++) msg.data.push_back(qpub(i));
           summit_ur5_publisher_.publish(msg);
-          
-          // std::cout<<"oMi : "<<ctrl_->oMi()<<std::endl;
+
         }
         ros::spinOnce();
         loop_rate.sleep();
@@ -128,20 +96,14 @@ int main(int argc, char ** argv){
 
 
 
-void jointStateCallback(const sensor_msgs::JointState::ConstPtr& msg) {
-  for(int i =0; i<9; i++)
-  {
-    q_(i) = msg->position[i];
-    v_(i) = msg->velocity[i];
+  void jointStateCallback(const sensor_msgs::JointState::ConstPtr& msg) {
+    for(int i =0; i<9; i++)
+    {
+      q_(i) = msg->position[i];
+      v_(i) = msg->velocity[i];
+    }
+
+    robot_ok_= true;
+  
   }
 
-  robot_ok_= true;
-
-}
-
-void FTSensorCallback(const std_msgs::Float64MultiArray::ConstPtr& msg) {
-  for (int i=0; i<6; i++)
-    ft_sensor_(i) = msg->data[i];  
-
-      // std::copy(msg->data.begin() + 6, msg->data.end(), ft_sensor_.data());
-}

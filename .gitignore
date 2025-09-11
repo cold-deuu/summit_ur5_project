@@ -1,20 +1,9 @@
-# vscode
 .vscode/
 
-# Compiled
-*.elc
+# No Use
+CMakeLists.txt
+summit_xl_assembled.txt
+summit_xl_assembled.obj
 
-# Packaging
-.cask/
-.eask/
-.eldev/
-.keg/
+mujoco_ros/
 
-# Built distribution
-dist/
-
-# Backup files
-*~
-
-# Undo-tree save-files
-*.~undo-tree

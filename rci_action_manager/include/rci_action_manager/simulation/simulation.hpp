@@ -76,9 +76,6 @@ std::vector<ros::Publisher> pubSet_;
 Eigen::VectorXd q_,v_,l_;     
 Eigen::VectorXd base_q_, base_v_;
 Eigen::MatrixXd J_;
-
-// Sensor
-Eigen::VectorXd ft_sensor_;
 // pinocchio::SE3 wTep_;
 // double dur_;
 
@@ -89,8 +86,4 @@ void get_joint_state();
 void gazebo_publish_(std::vector<ros::Publisher> u, Eigen::VectorXd q);
 void linkStatesCallback(const gazebo_msgs::LinkStates::ConstPtr& msg);
 void jointStateCallback(const sensor_msgs::JointState::ConstPtr& msg);
-void FTSensorCallback(const std_msgs::Float64MultiArray::ConstPtr& msg);
 
-
-// Admittance
-bool admit_flag_, init_admit_;

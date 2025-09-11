@@ -29,6 +29,12 @@ typedef struct State{
     Eigen::VectorXd eef_vel;
     SE3 oMi;
     int n_var;
+
+    // SCA
+    double sca_gamma;
+    Eigen::MatrixXd sca_dgamma_dq;
+
+
 }state;
 
 typedef struct Constraint{

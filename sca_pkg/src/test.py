@@ -16,22 +16,22 @@ def softmax(x):
 def forward_pass(x, weights):
     x = x.reshape(-1, 1) 
 
-    print(f"Bias : {weights['l1_bias'].shape}")
-    print(f"Weight : {weights['l1_weight'].shape}")
+    # print(f"Bias : {weights['l1_bias'].shape}")
+    # print(f"Weight : {weights['l1_weight'].shape}")
     
-    print(f"Bias : {weights['l2_bias'].shape}")
-    print(f"Weight : {weights['l2_weight'].shape}")
-    print(f"Bias : {weights['l3_bias'].shape}")
-    print(f"Weight : {weights['l3_weight'].shape}")
-    print(f"Bias : {weights['l4_bias'].shape}")
-    print(f"Weight : {weights['l4_weight'].shape}")
-    print(f"Bias : {weights['l5_bias'].shape}")
-    print(f"Weight : {weights['l5_weight'].shape}")
+    # print(f"Bias : {weights['l2_bias'].shape}")
+    # print(f"Weight : {weights['l2_weight'].shape}")
+    # print(f"Bias : {weights['l3_bias'].shape}")
+    # print(f"Weight : {weights['l3_weight'].shape}")
+    # print(f"Bias : {weights['l4_bias'].shape}")
+    # print(f"Weight : {weights['l4_weight'].shape}")
+    # print(f"Bias : {weights['l5_bias'].shape}")
+    # print(f"Weight : {weights['l5_weight'].shape}")
     l1 = tanh(weights['l1_weight'] @ x + weights['l1_bias'].reshape(-1, 1))
     l2 = tanh(weights['l2_weight'] @ l1 + weights['l2_bias'].reshape(-1, 1))
     l3 = tanh(weights['l3_weight'] @ l2 + weights['l3_bias'].reshape(-1, 1))
-    l4 = tanh(weights['l4_weight'] @ l3 + weights['l4_bias'].reshape(-1, 1))
-    out = weights['l5_weight'] @ l4+ weights['l5_bias'].reshape(-1, 1)
+    # l4 = tanh(weights['l4_weight'] @ l3 + weights['l4_bias'].reshape(-1, 1))
+    out = weights['l4_weight'] @ l3+ weights['l4_bias'].reshape(-1, 1)
     out = softmax(out) 
     return out.flatten()  
 
@@ -40,7 +40,8 @@ def forward_pass(x, weights):
 
 def joint_state_callback(msg):
     global q
-    q = np.array(msg.position)  # 최신 joint 상태를 numpy 배열로 저장
+    q = np.array(msg.position)  # 최신 joint 상태를 numpy 배열로 저장\
+    q = q[:6]
 
 def main():
     global q
@@ -63,14 +64,15 @@ def main():
         'l3_bias': mat['l3_bias'].flatten(),
         'l4_weight': mat['l4_weight'],
         'l4_bias': mat['l4_bias'].flatten(),
-        'l5_weight': mat['l5_weight'],
-        'l5_bias': mat['l5_bias'].flatten(),
+        # 'l5_weight': mat['l5_weight'],
+        # 'l5_bias': mat['l5_bias'].flatten(),
     }
-
 
 
     while not rospy.is_shutdown():
         if q.size > 0:
+            print(f"qsize : {q}")
+
             # forward 계산
             y = forward_pass(q, weights)
             max_index = np.argmax(y) 

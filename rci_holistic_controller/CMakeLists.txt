@@ -57,6 +57,8 @@ SET(${PROJECT_NAME}_CONSTRAINTS_HEADERS
 SET(${PROJECT_NAME}_TASK_HEADERS
   include/rci_holistic_controller/task/task_base.hpp
   include/rci_holistic_controller/task/task_se3_equality.hpp
+  include/rci_holistic_controller/task/task_sca_inequality.hpp
+  include/rci_holistic_controller/task/task_base_fix_equality.hpp
 
   )
 
@@ -100,6 +102,8 @@ SET(${PROJECT_NAME}_CONSTRAINTS_SOURCES
 SET(${PROJECT_NAME}_TASK_SOURCES
   src/task/task_base.cpp
   src/task/task_se3_equality.cpp
+  src/task/task_sca_inequality.cpp
+  src/task/task_base_fix_equality.cpp
     
   )
 
@@ -110,6 +114,7 @@ SET(${PROJECT_NAME}_SOURCES
   ${${PROJECT_NAME}_TRAJECTORIES_SOURCES}
   ${${PROJECT_NAME}_SOLVERS_SOURCES}
   ${${PROJECT_NAME}_CONSTRAINTS_SOURCES}
+  ${${PROJECT_NAME}_TASK_SOURCES}
   )
 
 

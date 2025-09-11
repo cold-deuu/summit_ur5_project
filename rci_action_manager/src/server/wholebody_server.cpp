@@ -45,12 +45,12 @@ bool SE3ActionServer::compute(ros::Time ctime)
   
   mu_->Control(ctime);
   
-  if (ctime.toSec() - start_time_.toSec() > goal_->duration+2.0){
+  if (ctime.toSec() - start_time_.toSec() > goal_->duration+0.0){
     setSucceeded();
     return true;
   }
 
-  if (ctime.toSec() - start_time_.toSec()  > goal_->duration+ 3.0){
+  if (ctime.toSec() - start_time_.toSec()  > goal_->duration+ 2.0){
     setAborted();
     return false;
   }
