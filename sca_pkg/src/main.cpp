@@ -61,7 +61,7 @@ int main(int argc, char ** argv)
 
     // Get Self-Collision Map 
     std::string sca_pkg_path = ros::package::getPath("sca_pkg");
-    std::string package_to_collisionIdx = "/src/meshes/collision_map/mm_collision_map_manip.txt";
+    std::string package_to_collisionIdx = "/src/meshes/collision_map/mm_collision_map_base.txt";
     std::string collisionIdx_path = sca_pkg_path + package_to_collisionIdx;
     auto collisionMap = read_noncol_map(collisionIdx_path);
     
@@ -88,7 +88,7 @@ int main(int argc, char ** argv)
 	d_req.enable_nearest_points = true;
 
     // About Data
-    int nSamples = 500000;
+    int nSamples = 50000;
     double fracCollision = 0.5;
     double fracFree = 0.15;
     double fracThreshold = 0.35;

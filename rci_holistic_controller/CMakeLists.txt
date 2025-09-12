@@ -59,9 +59,11 @@ SET(${PROJECT_NAME}_TASK_HEADERS
   include/rci_holistic_controller/task/task_se3_equality.hpp
   include/rci_holistic_controller/task/task_sca_inequality.hpp
   include/rci_holistic_controller/task/task_base_fix_equality.hpp
-
+  include/rci_holistic_controller/task/tasks.hpp
   )
-
+SET(${PROJECT_NAME}_DATA_HEADERS
+  include/rci_holistic_controller/data/hqp_data.hpp
+  )
 
 SET(${PROJECT_NAME}_HEADERS
   ${${PROJECT_NAME}_MATH_HEADERS}
@@ -70,6 +72,7 @@ SET(${PROJECT_NAME}_HEADERS
   ${${PROJECT_NAME}_ROBOTS_HEADERS}  
   ${${PROJECT_NAME}_CONSTRAINTS_HEADERS}  
   ${${PROJECT_NAME}_TASK_HEADERS}  
+  ${${PROJECT_NAME}_DATA_HEADERS}  
 
   )
 
@@ -107,6 +110,9 @@ SET(${PROJECT_NAME}_TASK_SOURCES
     
   )
 
+SET(${PROJECT_NAME}_DATA_SOURCES
+  src/data/hqp_data.cpp
+  )
 
 SET(${PROJECT_NAME}_SOURCES
   ${${PROJECT_NAME}_MATH_SOURCES}
@@ -115,6 +121,7 @@ SET(${PROJECT_NAME}_SOURCES
   ${${PROJECT_NAME}_SOLVERS_SOURCES}
   ${${PROJECT_NAME}_CONSTRAINTS_SOURCES}
   ${${PROJECT_NAME}_TASK_SOURCES}
+  ${${PROJECT_NAME}_DATA_SOURCES}
   )
 
 

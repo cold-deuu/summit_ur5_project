@@ -45,8 +45,14 @@ namespace RobotController
         // Test : Task SCA -> OK
         scaTask_ = std::make_shared<chanhqp::task::TaskSCAInequality>("sca_task");
 
-        // Test : Task Base Fix
+        // Test : Task Base Fix -> OK
         baseFixTask_ = std::make_shared<chanhqp::task::TaskBaseFixEquality>("base_fix_task");
+        
+
+        // Test : HQP Data
+        hqp_data_ = std::make_shared<chanhqp::data::HQPData>();
+        
+    
     }
 
     void SummitUR5Wrapper::update_joint(Eigen::VectorXd q,  Eigen::VectorXd v)
@@ -345,10 +351,19 @@ namespace RobotController
         SE3 oMi_ref = se3Ref_ -> computeNext();
         
         se3Task_ -> getSE3Traj(oMi_ref);
-        chanhqp::constraint::ConstraintBase& constraint_tracking = se3Task_ -> compute(state_);
-        chanhqp::constraint::ConstraintBase& constraint_sca = scaTask_->compute(state_);
-        chanhqp::constraint::ConstraintBase& constraint_base_fix = baseFixTask_->compute(state_);
 
+        // TEST 
+        hqp_data_ -> addTask(se3Task_, 2);
+        hqp_data_ -> addTask(scaTask_, 1);
+        hqp_data_ -> addTask(baseFixTask_, 3);        
+        hqp_data_ -> compute_problem_data(state_);
+
+        auto constraint = hqp_data_ -> get_constraint();
+
+        // OK
+        chanhqp::constraint::ConstraintBase& constraint_tracking = *constraint.at(2);
+        chanhqp::constraint::ConstraintBase& constraint_sca = *constraint.at(1);
+        chanhqp::constraint::ConstraintBase& constraint_base_fix = *constraint.at(3);
 
         // HQP
         Eigen::VectorXi activeSet(0);

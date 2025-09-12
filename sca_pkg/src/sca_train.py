@@ -26,9 +26,9 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 rospack = rospkg.RosPack()
 package_path = rospack.get_path('sca_pkg')
-package_to_data = "/src/data/data_5.txt"
-package_to_data2 = "/src/data/data_5_svm_mobile.txt"
-# convert_to_libsvm(package_path+package_to_data, package_path+package_to_data2)
+package_to_data = "/src/data/data_50.txt"
+package_to_data2 = "/src/data/data_50_svm_mobile.txt"
+convert_to_libsvm(package_path+package_to_data, package_path+package_to_data2)
 
 data_train = load_svmlight_file(package_path+package_to_data2)
 x_tens_train = torch.Tensor(data_train[0].toarray())

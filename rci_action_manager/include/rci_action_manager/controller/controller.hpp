@@ -56,6 +56,9 @@
 #include <rci_holistic_controller/constraint/constraint_equality.hpp>
 #include <rci_holistic_controller/constraint/constraint_inequality.hpp>
 
+// RCI HOLISTIC CONTROLLER : HQP Data
+#include <rci_holistic_controller/data/hqp_data.hpp>
+
 
 // SUMMIT UR5 SELF COLLISION AVOIDANCE
 #include <sca_pkg/ur5e_sca_manager/ur5e_sca_manager.hpp>
@@ -109,6 +112,7 @@ namespace RobotController{
             std::shared_ptr<chanhqp::task::TaskSE3Equality> se3Task_;
             std::shared_ptr<chanhqp::task::TaskSCAInequality> scaTask_;
             std::shared_ptr<chanhqp::task::TaskBaseFixEquality> baseFixTask_;
+            std::shared_ptr<chanhqp::data::HQPData> hqp_data_;
 
 
             pinocchio::Model model_;
