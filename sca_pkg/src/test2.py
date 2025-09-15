@@ -9,8 +9,8 @@ def convert_bin_to_txt(bin_file, txt_file, shape):
     print(f"[OK] {os.path.basename(bin_file)} → {os.path.basename(txt_file)} (shape={shape})")
 
 # 절대 경로 설정
-BIN_DIR = "/home/chan/catkin_ws/src/sca_pkg/result"
-TXT_DIR = "/home/chan/catkin_ws/src/sca_pkg/result/result_txt"
+BIN_DIR = "/home/chan/catkin_ws/src/sca_pkg/result/manip"
+TXT_DIR = "/home/chan/catkin_ws/src/sca_pkg/result/manip/result_txt"
 # 결과 디렉토리가 없다면 생성
 os.makedirs(TXT_DIR, exist_ok=True)
 
@@ -19,13 +19,11 @@ layer_shapes = {
     "l1_weight": (128, 6),
     "l2_weight": (128, 128),
     "l3_weight": (64, 128),
-    "l4_weight": (32, 64),
-    "l5_weight": (2, 32),
+    "l4_weight": (2, 64),
     "l1_bias": (128,),
     "l2_bias": (128,),
     "l3_bias": (64,),
-    "l4_bias": (32,),
-    "l5_bias": (2,),
+    "l4_bias": (2,),
 }
 
 # 변환 실행

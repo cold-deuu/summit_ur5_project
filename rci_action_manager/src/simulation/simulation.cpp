@@ -18,7 +18,8 @@ int main(int argc, char ** argv){
     ros::NodeHandle nh;
     ros::Subscriber jointState = nh.subscribe("/mujoco/joint_states", 5, &jointStateCallback, ros::TransportHints().tcpNoDelay(true));
     summit_ur5_publisher_ = nh.advertise<std_msgs::Float64MultiArray>("/mujoco_ctrl",1);
-    
+    rviz_publisher_ = nh.advertise<sensor_msgs::JointState>("/joint_states", 1);
+
     // Robot Wrapper
     string model_path, urdf_name;
     // nh.getParam("/urdf_path", model_path);  
@@ -38,7 +39,7 @@ int main(int argc, char ** argv){
 
 
 
-    // Server
+    // // Server
     se3_server_ = std::make_shared<SE3ActionServer>("rci_action_manager/se3Control", nh, ctrl_);
     joint_posture_server_ = std::make_shared<JointPostureActionServer>("rci_action_manager/jointControl", nh, ctrl_);
 
@@ -48,24 +49,27 @@ int main(int argc, char ** argv){
     int nv = model.nv;
     int na = robot_->na();
 
-
+    nq_ = nq;
     J_.resize(6,nv);
-    q_.setZero(9);
-    v_.setZero(9);
-
+    q_.setZero(nq_);
+    v_.setZero(nv);
 
     ros::Rate loop_rate(100);
-    
-
-        
+  
     int i = 0;
     VectorXd qpub(9);
     qpub = q_;
-    bool controlFlag_ = false;
 
+    Reference desired;
+  
+    // desired.mobile_vel.resize(3);
+    // desired.manip_pos.resize(nq_-3);
 
+    desired.mobile_vel = Eigen::VectorXd::Zero(3);
+    desired.manip_pos = q_.tail(nq-3);
 
-    std::cout<<"Error Here "<<std::endl;
+    // bool controlFlag_ = false;
+
     while(ros::ok()){
         if (robot_ok_)
         {
@@ -76,15 +80,17 @@ int main(int argc, char ** argv){
 
 
           if(!se3_server_ ->isrunning() && !joint_posture_server_->isrunning())
-            qpub = qpub;
+          {
+            desired = desired;
+            desired.mobile_vel.setZero();
+          }
+
           else
           {
-            qpub = ctrl_->get_result();
+            desired = ctrl_->get_result();
           }
-        
-          std_msgs::Float64MultiArray msg;
-          for(int i=0; i<qpub.size(); i++) msg.data.push_back(qpub(i));
-          summit_ur5_publisher_.publish(msg);
+          std::cout<<"Mobile Vel : "<<desired.mobile_vel.transpose()<<std::endl;
+          publish(desired);
 
         }
         ros::spinOnce();
@@ -93,17 +99,47 @@ int main(int argc, char ** argv){
 
 }
 
+void publish(Reference des)
+{
+  Eigen::VectorXd des_vec = Eigen::VectorXd::Zero(nq_);
+  des_vec.head(3) = des.mobile_vel;
+  des_vec.tail(nq_-3) = des.manip_pos;
+
+  // Mujoco
+  std_msgs::Float64MultiArray msg;
+  for(int i=0; i<des_vec.size(); i++) msg.data.push_back(des_vec(i));
+  summit_ur5_publisher_.publish(msg);
+
+  std::vector<std::string> joint_names = {
+      "ur5e_shoulder_pan_joint", "ur5e_shoulder_lift_joint", "ur5e_elbow_joint",
+      "ur5e_wrist_1_joint", "ur5e_wrist_2_joint", "ur5e_wrist_3_joint",
+      "gripper_finger1_joint"
+  };
+
+  // RVIZ
+  sensor_msgs::JointState joint_state_msg;
+  joint_state_msg.name = joint_names;
+  joint_state_msg.header.stamp = ros::Time::now();
+  joint_state_msg.position.resize(joint_names.size());
+  // joint_state_msg.position.assign(joint_names.size(), 0.0);  // 안전 초기화
+
+  // std::cout<<q.size()<<std::endl;
+  for(int i=0; i<des_vec.size()-3; i++) joint_state_msg.position[i] = des_vec(i+3);
+  joint_state_msg.position.back() = 0.0;
+  rviz_publisher_.publish(joint_state_msg);
+
+}
 
 
 
-  void jointStateCallback(const sensor_msgs::JointState::ConstPtr& msg) {
-    for(int i =0; i<9; i++)
-    {
-      q_(i) = msg->position[i];
-      v_(i) = msg->velocity[i];
-    }
-
-    robot_ok_= true;
-  
+void jointStateCallback(const sensor_msgs::JointState::ConstPtr& msg) {
+  for(int i =0; i<9; i++)
+  {
+    q_(i) = msg->position[i];
+    v_(i) = msg->velocity[i];
   }
+
+  robot_ok_= true;
+
+}
 

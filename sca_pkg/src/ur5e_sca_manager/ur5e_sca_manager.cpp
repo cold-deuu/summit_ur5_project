@@ -6,7 +6,8 @@ namespace rci_summit_ur5_controller
     {
         // Learning Weights Loading 
         std::string path_to_resPkg = ros::package::getPath("sca_pkg");
-        std::string pkg_to_resFoldfer = "/result/result_txt2";
+        std::string pkg_to_folder_mobile = "/result/mobile/result_txt";
+        std::string pkg_to_folder_manip = "/result/manip/result_txt";
         std::string path_to_res1_weight = "/l1_weight.txt";
         std::string path_to_res1_bias = "/l1_bias.txt";
         std::string path_to_res2_weight = "/l2_weight.txt";
@@ -15,26 +16,34 @@ namespace rci_summit_ur5_controller
         std::string path_to_res3_bias = "/l3_bias.txt";
         std::string path_to_res4_weight = "/l4_weight.txt";
         std::string path_to_res4_bias = "/l4_bias.txt";
-        std::string path_to_res5_weight = "/l5_weight.txt";
-        std::string path_to_res5_bias = "/l5_bias.txt";
 
-        weight1_ = read_txt_to_matrix(path_to_resPkg + pkg_to_resFoldfer + path_to_res1_weight);
-        bias1_ = read_txt_to_matrix(path_to_resPkg + pkg_to_resFoldfer + path_to_res1_bias);
-    
-        weight2_ = read_txt_to_matrix(path_to_resPkg + pkg_to_resFoldfer + path_to_res2_weight);
-        bias2_ = read_txt_to_matrix(path_to_resPkg + pkg_to_resFoldfer + path_to_res2_bias);
-    
-        weight3_ = read_txt_to_matrix(path_to_resPkg + pkg_to_resFoldfer + path_to_res3_weight);
-        bias3_ = read_txt_to_matrix(path_to_resPkg + pkg_to_resFoldfer + path_to_res3_bias);
-    
-        weight4_ = read_txt_to_matrix(path_to_resPkg + pkg_to_resFoldfer + path_to_res4_weight);
-        bias4_ = read_txt_to_matrix(path_to_resPkg + pkg_to_resFoldfer + path_to_res4_bias);
-    
-        weight5_ = read_txt_to_matrix(path_to_resPkg + pkg_to_resFoldfer + path_to_res5_weight);
-        bias5_ = read_txt_to_matrix(path_to_resPkg + pkg_to_resFoldfer + path_to_res5_bias);
 
-        weights_ = {weight1_, weight2_, weight3_, weight4_, weight5_};
-        biases_  = {bias1_, bias2_, bias3_, bias4_, bias5_};
+        // Load Weights : Hard Coded
+        mobile_weight1_ = read_txt_to_matrix(path_to_resPkg + pkg_to_folder_mobile + path_to_res1_weight);
+        mobile_bias1_ = read_txt_to_matrix(path_to_resPkg + pkg_to_folder_mobile + path_to_res1_bias);
+        mobile_weight2_ = read_txt_to_matrix(path_to_resPkg + pkg_to_folder_mobile + path_to_res2_weight);
+        mobile_bias2_ = read_txt_to_matrix(path_to_resPkg + pkg_to_folder_mobile + path_to_res2_bias);
+        mobile_weight3_ = read_txt_to_matrix(path_to_resPkg + pkg_to_folder_mobile + path_to_res3_weight);
+        mobile_bias3_ = read_txt_to_matrix(path_to_resPkg + pkg_to_folder_mobile + path_to_res3_bias);
+        mobile_weight4_ = read_txt_to_matrix(path_to_resPkg + pkg_to_folder_mobile + path_to_res4_weight);
+        mobile_bias4_ = read_txt_to_matrix(path_to_resPkg + pkg_to_folder_mobile + path_to_res4_bias);
+
+        manip_weight1_ = read_txt_to_matrix(path_to_resPkg + pkg_to_folder_manip + path_to_res1_weight);
+        manip_bias1_ = read_txt_to_matrix(path_to_resPkg + pkg_to_folder_manip + path_to_res1_bias);
+        manip_weight2_ = read_txt_to_matrix(path_to_resPkg + pkg_to_folder_manip + path_to_res2_weight);
+        manip_bias2_ = read_txt_to_matrix(path_to_resPkg + pkg_to_folder_manip + path_to_res2_bias);
+        manip_weight3_ = read_txt_to_matrix(path_to_resPkg + pkg_to_folder_manip + path_to_res3_weight);
+        manip_bias3_ = read_txt_to_matrix(path_to_resPkg + pkg_to_folder_manip + path_to_res3_bias);
+        manip_weight4_ = read_txt_to_matrix(path_to_resPkg + pkg_to_folder_manip + path_to_res4_weight);
+        manip_bias4_ = read_txt_to_matrix(path_to_resPkg + pkg_to_folder_manip + path_to_res4_bias);
+
+        // Mobile <-> Manipulator
+        mobile_weights_ = {mobile_weight1_, mobile_weight2_, mobile_weight3_, mobile_weight4_};
+        mobile_biases_  = {mobile_bias1_, mobile_bias2_, mobile_bias3_, mobile_bias4_};
+
+        // Manipulator itself
+        manip_weights_ = {manip_weight1_, manip_weight2_, manip_weight3_, manip_weight4_};
+        manip_biases_  = {manip_bias1_, manip_bias2_, manip_bias3_, manip_bias4_};
 
     };
 
@@ -90,35 +99,61 @@ namespace rci_summit_ur5_controller
         return (exps / exps.sum()).matrix();
     }
 
-    double SummitUR5_ScaManager::forward_pass(const Eigen::VectorXd& q)
+    std::map<std::string, double> SummitUR5_ScaManager::forward_pass(const Eigen::VectorXd& q)
     {
-        Eigen::VectorXd x = q;
-        for (size_t i = 0; i < weights_.size() - 1; ++i) {
-            x = tanh(weights_[i] * x + biases_[i]);
+        // Manip
+        Eigen::VectorXd x_manip = q;
+        for (size_t i = 0; i < manip_weights_.size() - 1; ++i) {
+            x_manip = tanh(manip_weights_[i] * x_manip + manip_biases_[i]);
         }
     
-        Eigen::VectorXd out = weights_.back() * x + biases_.back();
-        Eigen::VectorXd prob = softmax(out);
-        
-        return prob(0)-prob(1);
+        Eigen::VectorXd out_manip = manip_weights_.back() * x_manip + manip_biases_.back();
+        Eigen::VectorXd prob_manip = softmax(out_manip);
+
+        double gamma_manip = prob_manip(0) - prob_manip(1);
+
+        // Mobile
+        Eigen::VectorXd x_mobile = q;
+        for (size_t i = 0; i < mobile_weights_.size() - 1; ++i) {
+            x_mobile = tanh(mobile_weights_[i] * x_mobile + mobile_biases_[i]);
+        }
+    
+        Eigen::VectorXd out_mobile = mobile_weights_.back() * x_mobile + mobile_biases_.back();
+        Eigen::VectorXd prob_mobile = softmax(out_mobile);
+
+        double gamma_mobile = prob_mobile(0) - prob_mobile(1);
+
+        std::map<std::string, double> gamma;
+
+        gamma["mobile"] = gamma_mobile;
+        gamma["manip"] = gamma_manip;
+
+        return gamma;
     }
 
-    Eigen::MatrixXd SummitUR5_ScaManager::numerical_jacobian_gamma(const Eigen::VectorXd& q, double h)
+    std::map<std::string, Eigen::MatrixXd> SummitUR5_ScaManager::numerical_jacobian_gamma(const Eigen::VectorXd& q, double h)
     {
         const int n = q.size();
         const int m = 1;  // 또는 output 차원 추론 가능 시 q_output.size()
-        Eigen::MatrixXd J(m, n);
+        Eigen::MatrixXd J_mobile(m, n);
+        Eigen::MatrixXd J_manip(m, n);
+        
     
         for (int i = 0; i < n; ++i) {
             Eigen::VectorXd dq = Eigen::VectorXd::Zero(n);
             dq(i) = h;
     
-            double y_plus  = this->forward_pass(q + dq);
-            double y_minus = this->forward_pass(q - dq);
-    
-            J(0,i) = (y_plus - y_minus) / (2.0 * h);
+            auto y_plus  = this->forward_pass(q + dq);
+            auto y_minus = this->forward_pass(q - dq);
+        
+            J_mobile(0,i) = (y_plus["mobile"] - y_minus["mobile"]) / (2.0 * h);
+            J_manip(0,i) = (y_plus["manip"] - y_minus["manip"]) / (2.0 * h);
         }
-    
+        
+        std::map<std::string, Eigen::MatrixXd> J;
+        J["mobile"] = J_mobile;
+        J["manip"] = J_manip;
+
         return J;
     }
 

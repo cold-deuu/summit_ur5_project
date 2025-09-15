@@ -61,7 +61,7 @@ int nq_;
 
 //Subs
 // ros::Publisher armPub1_, armPub2_, armPub3_, armPub4_, armPub5_, armPub6_, mobilePub_;
-ros::Publisher summit_ur5_publisher_;
+ros::Publisher summit_ur5_publisher_, rviz_publisher_;
 //msg
 std::vector<ros::Publisher> pubSet_;
 
@@ -86,4 +86,7 @@ void get_joint_state();
 void gazebo_publish_(std::vector<ros::Publisher> u, Eigen::VectorXd q);
 void linkStatesCallback(const gazebo_msgs::LinkStates::ConstPtr& msg);
 void jointStateCallback(const sensor_msgs::JointState::ConstPtr& msg);
+
+void publish(Reference des);
+
 

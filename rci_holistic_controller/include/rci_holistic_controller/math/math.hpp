@@ -20,7 +20,12 @@ using namespace std;
 typedef struct Pub_state {   
     Eigen::VectorXd tension;
     Eigen::VectorXd arm_torque;
-} pub_state;   
+} pub_state;  
+
+typedef struct Reference {   
+    Eigen::VectorXd mobile_vel;
+    Eigen::VectorXd manip_pos;
+} reference;   
 
 typedef struct State{
     Eigen::MatrixXd J;
@@ -31,8 +36,14 @@ typedef struct State{
     int n_var;
 
     // SCA
-    double sca_gamma;
-    Eigen::MatrixXd sca_dgamma_dq;
+    std::map<std::string, double> sca_gamma;
+    std::map<std::string, Eigen::MatrixXd> sca_dgamma_dq;
+
+    // Publisher
+    
+
+    // double sca_gamma;
+    // Eigen::MatrixXd sca_dgamma_dq;
 
 
 }state;

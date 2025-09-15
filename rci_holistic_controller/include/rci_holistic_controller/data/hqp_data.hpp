@@ -23,6 +23,8 @@ namespace chanhqp{
                 void addTask(std::shared_ptr<TaskBase> task, int priority);
                 void compute_problem_data(State state);
 
+                void qp_initialize();
+
                 std::map<int, ConstraintBase*> get_constraint()
                 {
                     return constraint_;
@@ -37,6 +39,13 @@ namespace chanhqp{
 
                 // Tasks 
                 int num_task_;
+
+
+                // QP Components
+                Eigen::MatrixXd Q;
+                Eigen::VectorXd C;
+                Eigen::MatrixXd A_eq, A_ineq;
+                Eigen::VectorXd b_eq, b_ineq;
 
 
 

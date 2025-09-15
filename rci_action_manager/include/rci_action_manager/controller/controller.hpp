@@ -85,7 +85,7 @@ namespace RobotController{
             void initialize();
             void compute_all_terms();
             SE3 oMi();
-            VectorXd get_result();
+            Reference get_result();
             void update_joint(Eigen::VectorXd q,  Eigen::VectorXd v);
 
             // Control : SE3
@@ -131,6 +131,7 @@ namespace RobotController{
 
             // Edit : 250911
             State state_;
+            Reference ref_;
     
 
 

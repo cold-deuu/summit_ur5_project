@@ -54,7 +54,7 @@ def main():
 
     rospack = rospkg.RosPack()
     package_path = rospack.get_path('sca_pkg')
-    mat = loadmat(package_path + '/src/nn_mm_100.mat')     
+    mat = loadmat(package_path + '/src/nn_mobile_100.mat')     
     weights = {
         'l1_weight': mat['l1_weight'],
         'l1_bias': mat['l1_bias'].flatten(),
@@ -76,7 +76,7 @@ def main():
             # forward 계산
             y = forward_pass(q, weights)
             max_index = np.argmax(y) 
-            # print(y)
+            print(y)
             if y[1] > 0.5 and y[1]<0.9:
                 rospy.logwarn("Near Collision")
             elif y[1]>0.9:
