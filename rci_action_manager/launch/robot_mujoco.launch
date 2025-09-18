@@ -6,14 +6,12 @@
   <!--param name="issimulation" type="bool" value="true"/-->
     
   <node pkg="rci_action_manager" type="mujoco_launch.py" name="mujoco_summit_ur" output="screen" />
-  <!-- <node pkg="rci_action_manager" type="rci_action_manager_simulation" name="rci_action_manager_simulation" output="screen" />
-
-  <param name="robot_description" command="$(find xacro)/xacro '$(find summit_xl_description)/summit_ur5e_robot.urdf.xacro' hand:=$(arg hand) robot_namespace:=$(arg robot_namespace)"/>
-  <node name="rviz" pkg="rviz" type="rviz"/>
-  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" /> -->
+  <node pkg="rci_action_manager" type="rci_action_manager_simulation" name="rci_action_manager_simulation" output="screen" />
 
   <param name="robot_description" command="$(find xacro)/xacro '$(find summit_xl_description)/summit_ur5e_robot.urdf.xacro' hand:=$(arg hand) robot_namespace:=$(arg robot_namespace)"/>
   <node name="rviz" pkg="rviz" type="rviz"/>
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+
+
 
 </launch>
