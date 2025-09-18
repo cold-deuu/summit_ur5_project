@@ -37,7 +37,7 @@ class ControlSuiteShell(cmd.Cmd):
     def __init__(self):
             cmd.Cmd.__init__(self)
             rospy.init_node('cdpr_actions_client')
-
+            
             self.se3_ctrl_client = actionlib.SimpleActionClient('rci_action_manager/se3Control', rci_action_manager.msg.SE3Action)
             self.se3_ctrl_client.wait_for_server()
             self.joint_ctrl_client = actionlib.SimpleActionClient('rci_action_manager/jointControl', rci_action_manager.msg.JointPostureAction)
@@ -66,6 +66,7 @@ class ControlSuiteShell(cmd.Cmd):
         goal.target_pose = Pose()
         
         goal.target_pose.position.x = -0.8
+
         goal.target_pose.position.y = 0.0
         goal.target_pose.position.z = -0.3
 

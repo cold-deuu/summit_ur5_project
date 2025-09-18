@@ -55,7 +55,7 @@
     <mesh file="wrist2_1.obj"/>
     <mesh file="wrist2_2.obj"/>
     <mesh file="wrist3.obj"/>
-    <mesh name="summit_xls_chassis" file="summit_xl_assembled.obj"/>
+    <mesh name="summit_xls_chassis" file="summit_xl_assembled_decim.obj"/>
 
   </asset>
 
@@ -87,22 +87,22 @@
     <body name="summit_xl_front_right_wheel_link" pos="0.2225 -0.2045 0.127">
       <inertial pos="0 0 0" quat="0.707107 0 0 0.707107" mass="6.5" diaginertia="0.0524193 0.0303095 0.0303095"/>
       <!--joint name="summit_xl_front_right_wheel_joint" pos="0 0 0" axis="0 1 0"/-->
-      <geom size="0.127 0.0435" quat="0.707107 0.707107 0 0" type="cylinder" rgba="0.2 0.2 0.2 1"/>
+      <!-- <geom size="0.127 0.0435" quat="0.707107 0.707107 0 0" type="cylinder" rgba="0.2 0.2 0.2 1"/> -->
     </body>
     <body name="summit_xl_front_left_wheel_link" pos="0.2225 0.2045 0.127">
       <inertial pos="0 0 0" quat="0.707107 0 0 0.707107" mass="6.5" diaginertia="0.0524193 0.0303095 0.0303095"/>
       <!--joint name="summit_xl_front_left_wheel_joint" pos="0 0 0" axis="0 1 0"/-->
-      <geom size="0.127 0.0435" quat="0.707107 0.707107 0 0" type="cylinder" rgba="0.2 0.2 0.2 1"/>
+      <!-- <geom size="0.127 0.0435" quat="0.707107 0.707107 0 0" type="cylinder" rgba="0.2 0.2 0.2 1"/> -->
     </body>
     <body name="summit_xl_back_left_wheel_link" pos="-0.2225 0.2045 0.127">
       <inertial pos="0 0 0" quat="0.707107 0 0 0.707107" mass="6.5" diaginertia="0.0524193 0.0303095 0.0303095"/>
       <!--joint name="summit_xl_back_left_wheel_joint" pos="0 0 0" axis="0 1 0"/-->
-      <geom size="0.127 0.0435" quat="0.707107 0.707107 0 0" type="cylinder" rgba="0.2 0.2 0.2 1"/>
+      <!-- <geom size="0.127 0.0435" quat="0.707107 0.707107 0 0" type="cylinder" rgba="0.2 0.2 0.2 1"/> -->
     </body>
     <body name="summit_xl_back_right_wheel_link" pos="-0.2225 -0.2045 0.127">
       <inertial pos="0 0 0" quat="0.707107 0 0 0.707107" mass="6.5" diaginertia="0.0524193 0.0303095 0.0303095"/>
       <!-- joint name="summit_xl_back_right_wheel_joint" pos="0 0 0" axis="0 1 0"/ -->
-      <geom size="0.127 0.0435" quat="0.707107 0.707107 0 0" type="cylinder" rgba="0.2 0.2 0.2 1"/>
+      <!-- <geom size="0.127 0.0435" quat="0.707107 0.707107 0 0" type="cylinder" rgba="0.2 0.2 0.2 1"/> -->
     </body>
 
       <light name="spotlight" mode="targetbodycom" target="wrist_2_link" pos="0 -1 2"/>

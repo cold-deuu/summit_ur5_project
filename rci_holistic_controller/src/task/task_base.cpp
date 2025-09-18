@@ -17,3 +17,8 @@ void TaskBase::Kd(double Kd)
 {
     Kd_ = Kd;
 }
+
+const std::string & TaskBase::name() const
+{
+  return name_;
+}

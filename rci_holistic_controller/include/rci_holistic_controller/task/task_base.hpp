@@ -27,6 +27,8 @@ namespace chanhqp{
                 // Reference
                 virtual bool getSE3Traj(pinocchio::SE3 trajSample) = 0;
                 virtual bool getVectorTraj(Eigen::VectorXd trajSample) = 0;
+     
+                virtual const std::string & name() const;
 
                 // Gain 
                 virtual void Kp(double Kp);

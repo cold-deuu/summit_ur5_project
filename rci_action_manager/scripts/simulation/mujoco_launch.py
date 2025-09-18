@@ -130,17 +130,24 @@ class mujocoSim:
                 # EE
                 self.compute_ext_force()
                 if self.initSimulation:
-                    self.data.ctrl[:] = np.array([500.0, 0.0, 0.0, 0.0, 0, 0,0.0, 0.0, 0.0])
+
+                    # self.data.ctrl[:] = np.array([500.0, 0.0, 0.0, 0.0, 0, 0,0.0, 0.0, 0.0])
+                    self.data.ctrl = np.zeros((self.num_joints))
                     # mujoco.mj_forward(self.model, self.data)
                     mujoco.mj_step(self.model, self.data)
 
-                    # self.initSimulation = False
+                    self.initSimulation = False
                 
                 if self.controlFlag:
                     # self.data.qpos[:] = self.ctrl  # 컨트롤 값 적용
                     self.data.ctrl[:] = self.ctrl  # 컨트롤 값 적용
+
+                    self.data.ctrl[:3] *= 0.0
+                    self.data.qvel = np.zeros((self.num_joints))
+                    self.data.qvel[:3] = self.ctrl[:3] 
+                    self.data.qpos[3:] = self.ctrl[3:]
                     # self.data.ctrl[:3] *= 10.0
-                    print("CTRl : ", self.data.ctrl[:])
+                    # print("CTRl : ", self.data.ctrl[:])
                     mujoco.mj_step(self.model, self.data)
                 # else:
                 #     mujoco.mj_forward(self.model, self.data)

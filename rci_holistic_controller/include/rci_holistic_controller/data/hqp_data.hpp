@@ -1,5 +1,8 @@
 #pragma once
 
+// QP Header
+#include "eiquadprog/eiquadprog.hpp"
+
 // HQP Solver : Math
 #include "rci_holistic_controller/math/math.hpp"
 
@@ -30,12 +33,14 @@ namespace chanhqp{
                     return constraint_;
                 }
 
-            // Eigen::VectorXd solve();
+            Eigen::VectorXd solve();
 
             protected:
                 // Pointer??
                 std::map<int, std::shared_ptr<TaskBase>> tasks_;
                 std::map<int, ConstraintBase*> constraint_;
+
+                std::vector<ConstraintBase*> safety_constraint_;
 
                 // Tasks 
                 int num_task_;
@@ -47,6 +52,9 @@ namespace chanhqp{
                 Eigen::MatrixXd A_eq, A_ineq;
                 Eigen::VectorXd b_eq, b_ineq;
 
+                // Eigen::VectorXd slack_eq_, slack_ineq_;
+                std::vector<Eigen::VectorXd> slack_eq_, slack_ineq_;
+                Eigen::VectorXd sol_;
 
 
         };

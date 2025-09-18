@@ -34,7 +34,7 @@ ConstraintBase & TaskSCAInequality::compute(State state)
 
     sca_ineq_mat.block<1,6>(1,3) = state.sca_dgamma_dq["manip"];
     // sca_ineq_mat(0,9) = 1;
-    sca_ineq_vec(1) = 0.01 * std::log(state.sca_gamma["manip"]+1);
+    sca_ineq_vec(1) = 0.1 * std::log(state.sca_gamma["manip"]+1);
 
     constraint_.setMatrix(sca_ineq_mat);
     constraint_.setVector(sca_ineq_vec);
