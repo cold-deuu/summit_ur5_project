@@ -155,7 +155,7 @@ namespace RobotController
         // Task Insert
         hqp_data_ -> addTask(scaTask_, 0);
         hqp_data_ -> addTask(se3Task_, 1);
-        // hqp_data_ -> addTask(baseFixTask_, 1);        
+        hqp_data_ -> addTask(baseFixTask_, 2);        
 
     }
 

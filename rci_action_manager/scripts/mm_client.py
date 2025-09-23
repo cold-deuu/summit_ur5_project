@@ -120,10 +120,10 @@ class ControlSuiteShell(cmd.Cmd):
         goal.duration = 5
         goal.target_pose = Pose()
         
-        goal.target_pose.position.x = -0.6
+        goal.target_pose.position.x = -0.4
 
         goal.target_pose.position.y = 0.0
-        goal.target_pose.position.z = -0.5
+        goal.target_pose.position.z = -0.6
 
         goal.target_pose.orientation.x = 0.0
         goal.target_pose.orientation.y = 0
