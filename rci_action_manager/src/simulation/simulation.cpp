@@ -89,7 +89,6 @@ int main(int argc, char ** argv){
           {
             desired = ctrl_->get_result();
           }
-          std::cout<<"Mobile Vel : "<<desired.mobile_vel.transpose()<<std::endl;
           publish(desired);
 
         }

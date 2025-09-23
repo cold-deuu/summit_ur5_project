@@ -29,13 +29,14 @@ namespace chanhqp{
                 virtual bool getVectorTraj(Eigen::VectorXd trajSample) = 0;
      
                 virtual const std::string & name() const;
+                virtual const std::shared_ptr<chanhqp::constraint::ConstraintBase> constraint() const =0;
 
                 // Gain 
                 virtual void Kp(double Kp);
                 virtual void Kd(double Kd);
 
                 // Compute
-                virtual chanhqp::constraint::ConstraintBase & compute(State state) = 0;
+                virtual std::shared_ptr<chanhqp::constraint::ConstraintBase> compute(State state) = 0;
 
                 // // Control
                 // virtual bool isPositionControl() const = 0;

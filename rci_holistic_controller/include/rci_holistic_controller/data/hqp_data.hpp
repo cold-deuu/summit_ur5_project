@@ -27,8 +27,10 @@ namespace chanhqp{
                 void compute_problem_data(State state);
 
                 void qp_initialize();
+                void initalize_all_data();
 
-                std::map<int, ConstraintBase*> get_constraint()
+
+                std::map<int, std::shared_ptr<chanhqp::constraint::ConstraintBase>> get_constraint()
                 {
                     return constraint_;
                 }
@@ -37,10 +39,18 @@ namespace chanhqp{
 
             protected:
                 // Pointer??
-                std::map<int, std::shared_ptr<TaskBase>> tasks_;
-                std::map<int, ConstraintBase*> constraint_;
+                // std::map<int, std::shared_ptr<TaskBase>> tasks_;
+                // std::map<int, ConstraintBase*> constraint_;
 
-                std::vector<ConstraintBase*> safety_constraint_;
+                // std::vector<ConstraintBase*> safety_constraint_;
+
+
+                std::map<int, std::shared_ptr<TaskBase>> tasks_;
+                std::vector<std::shared_ptr<TaskBase>> safety_tasks_;
+                std::map<int, std::shared_ptr<chanhqp::constraint::ConstraintBase>> constraint_;
+                std::vector<std::shared_ptr<chanhqp::constraint::ConstraintBase>> safety_constraint_;
+
+
 
                 // Tasks 
                 int num_task_;

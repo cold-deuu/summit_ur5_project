@@ -47,10 +47,10 @@ class ControlSuiteShell(cmd.Cmd):
     def do_home(self, arg):
         print("JointPosture Control")
         goal = rci_action_manager.msg.JointPostureGoal
-        goal.duration = 3
+        goal.duration = 0.2
         goal.target_joints = JointState()
         # goal.target_joints.position = np.array([np.pi, -1.57/2, 1.57,0.0, 0.0, 0.0])
-        goal.target_joints.position = np.array([0, -1.57/2, 1.57,0.0, 0.0, 0.0])
+        goal.target_joints.position = np.array([0, -1.57, 1.57,-1.57, -1.57, 0.0])
 
         self.joint_ctrl_client.send_goal(goal)
         self.joint_ctrl_client.wait_for_result()
@@ -62,18 +62,18 @@ class ControlSuiteShell(cmd.Cmd):
     def do_wholebody(self, arg):
         print ("Wholebody Control")
         goal = rci_action_manager.msg.SE3Goal
-        goal.duration = 5
+        goal.duration = 3
         goal.target_pose = Pose()
         
-        goal.target_pose.position.x = -0.8
+        goal.target_pose.position.x = -0.4
 
         goal.target_pose.position.y = 0.0
-        goal.target_pose.position.z = -0.3
+        goal.target_pose.position.z = -0.5
 
-        goal.target_pose.orientation.x = 0.7071068
+        goal.target_pose.orientation.x = 0.0
         goal.target_pose.orientation.y = 0
         goal.target_pose.orientation.z = 0.0
-        goal.target_pose.orientation.w = 0.7071068
+        goal.target_pose.orientation.w = 1.0
 
 
         goal.relative = True
@@ -90,7 +90,7 @@ class ControlSuiteShell(cmd.Cmd):
     def do_wholebody2(self, arg):
         print ("Wholebody Control")
         goal = rci_action_manager.msg.SE3Goal
-        goal.duration = 10
+        goal.duration = 3
         goal.target_pose = Pose()
         
         goal.target_pose.position.x = +0.3

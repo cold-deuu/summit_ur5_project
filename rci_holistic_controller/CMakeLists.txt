@@ -39,10 +39,6 @@ SET(${PROJECT_NAME}_TRAJECTORIES_HEADERS
   include/rci_holistic_controller/trajectory/joint_cubic.hpp
   )
 
-SET(${PROJECT_NAME}_SOLVERS_HEADERS
-  include/rci_holistic_controller/solver/HQP_solver.hpp
-
-  )
 
 SET(${PROJECT_NAME}_ROBOTS_HEADERS
   include/rci_holistic_controller/robot/robot.hpp
@@ -57,9 +53,13 @@ SET(${PROJECT_NAME}_CONSTRAINTS_HEADERS
 SET(${PROJECT_NAME}_TASK_HEADERS
   include/rci_holistic_controller/task/task_base.hpp
   include/rci_holistic_controller/task/task_se3_equality.hpp
+  include/rci_holistic_controller/task/task_joint_posture_equality.hpp
+  include/rci_holistic_controller/task/task_joint_velocity_limit_inequality.hpp
   include/rci_holistic_controller/task/task_sca_inequality.hpp
   include/rci_holistic_controller/task/task_base_fix_equality.hpp
   include/rci_holistic_controller/task/tasks.hpp
+
+  
   )
 SET(${PROJECT_NAME}_DATA_HEADERS
   include/rci_holistic_controller/data/hqp_data.hpp
@@ -68,7 +68,6 @@ SET(${PROJECT_NAME}_DATA_HEADERS
 SET(${PROJECT_NAME}_HEADERS
   ${${PROJECT_NAME}_MATH_HEADERS}
   ${${PROJECT_NAME}_TRAJECTORIES_HEADERS}
-  ${${PROJECT_NAME}_SOLVERS_HEADERS}
   ${${PROJECT_NAME}_ROBOTS_HEADERS}  
   ${${PROJECT_NAME}_CONSTRAINTS_HEADERS}  
   ${${PROJECT_NAME}_TASK_HEADERS}  
@@ -88,9 +87,7 @@ SET(${PROJECT_NAME}_TRAJECTORIES_SOURCES
   src/trajectory/joint_cubic.cpp
   )
 
-SET(${PROJECT_NAME}_SOLVERS_SOURCES
-  src/solver/HQP_solver.cpp
-  )
+
 
 SET(${PROJECT_NAME}_ROBOTS_SOURCES
   src/robot/robot.cpp
@@ -105,9 +102,10 @@ SET(${PROJECT_NAME}_CONSTRAINTS_SOURCES
 SET(${PROJECT_NAME}_TASK_SOURCES
   src/task/task_base.cpp
   src/task/task_se3_equality.cpp
+  src/task/task_joint_posture_equality.cpp
+  src/task/task_joint_velocity_limit_inequality.cpp
   src/task/task_sca_inequality.cpp
   src/task/task_base_fix_equality.cpp
-    
   )
 
 SET(${PROJECT_NAME}_DATA_SOURCES
@@ -118,7 +116,6 @@ SET(${PROJECT_NAME}_SOURCES
   ${${PROJECT_NAME}_MATH_SOURCES}
   ${${PROJECT_NAME}_ROBOTS_SOURCES}
   ${${PROJECT_NAME}_TRAJECTORIES_SOURCES}
-  ${${PROJECT_NAME}_SOLVERS_SOURCES}
   ${${PROJECT_NAME}_CONSTRAINTS_SOURCES}
   ${${PROJECT_NAME}_TASK_SOURCES}
   ${${PROJECT_NAME}_DATA_SOURCES}

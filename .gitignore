@@ -1,9 +1,0 @@
-.vscode/
-
-# No Use
-CMakeLists.txt
-summit_xl_assembled.txt
-summit_xl_assembled.obj
-
-mujoco_ros/
-

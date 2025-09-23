@@ -13,10 +13,15 @@ namespace chanhqp{
                 bool getSE3Traj(pinocchio::SE3 trajSample);
                 bool getVectorTraj(Eigen::VectorXd );
 
-                chanhqp::constraint::ConstraintBase & compute(State state);
+                // chanhqp::constraint::ConstraintBase & compute(State state);
+                std::shared_ptr<chanhqp::constraint::ConstraintBase> compute(State state);
+                const std::shared_ptr<chanhqp::constraint::ConstraintBase> constraint() const;
+
 
             protected:
-                chanhqp::constraint::ConstraintEquality constraint_;
+                // chanhqp::constraint::ConstraintEquality constraint_;
+                std::shared_ptr<chanhqp::constraint::ConstraintEquality> constraint_;
+
         };
     };
 };
