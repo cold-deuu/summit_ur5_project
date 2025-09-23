@@ -77,8 +77,13 @@ Follow these steps to launch the simulation and control the robot. Each command 
 ![JointPos](doc/gif/home.gif)
 
 ---
-### Joint Posuter with Self-Collision Avoidance
+### Application : Self-Collision
+**Joint Posture with Self-Collision Avoidance**
 ![JointPosSca](doc/gif/sca_se3_joint.gif)
+
+---
+**SE3 Tracking with Self-Collision Avoidance**
+![SE3Sca](doc/gif/sca_se3_wbc.gif)
 
 ## To Do List
 - [ ] Integrate Admittance Controller (see ros-noetic devel)
