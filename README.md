@@ -64,7 +64,6 @@ Follow these steps to launch the simulation and control the robot. Each command 
    ```
 
 ## Experiments
----
 
 ### SE3 Tracking
 **Whole body**
@@ -73,9 +72,11 @@ Follow these steps to launch the simulation and control the robot. Each command 
 **Manipulator**
 ![Se3_manip](doc/gif/se3_manip.gif)
 
+---
 ### Joint Posture Tracking
 ![JointPos](doc/gif/home.gif)
 
+---
 ### Joint Posuter with Self-Collision Avoidance
 ![JointPosSca](doc/gif/sca_se3_joint.gif)
 
