@@ -11,34 +11,37 @@ using namespace Eigen;
 using namespace holistic_controller::math;
 
 bool robot_ok_ = false;
-
+bool is_wholebody_;
 int main(int argc, char ** argv){
     // ROS
-    ros::init(argc, argv, "hqp_husky_franka");
+    ros::init(argc, argv, "hqp_summit_ur");
     ros::NodeHandle nh;
     ros::Subscriber jointState = nh.subscribe("/mujoco/joint_states", 5, &jointStateCallback, ros::TransportHints().tcpNoDelay(true));
-    ros::Subscriber ftSensor = nh.subscribe("/mujoco/ft_sensor", 5, &FTSensorCallback, ros::TransportHints().tcpNoDelay(true));
-    
     summit_ur5_publisher_ = nh.advertise<std_msgs::Float64MultiArray>("/mujoco_ctrl",1);
-    
+    rviz_publisher_ = nh.advertise<sensor_msgs::JointState>("/joint_states", 1);
+
     // Robot Wrapper
     string model_path, urdf_name;
-    // nh.getParam("/urdf_path", model_path);  
-    // nh.getParam("/urdf_name",urdf_name);
-    model_path = "/home/chan/catkin_ws/src/robot_description/summit_xl_description";
-    urdf_name = "/summit_ur_control.urdf";
 
-    string urdf_name2 = "/ur5e_control.urdf";
-
+    model_path = ros::package::getPath("summit_xl_description");
+    nh.getParam("/whole_body", is_wholebody_);  
+    if (is_wholebody_)
+    {
+      ROS_INFO_STREAM("Wholebody Controller");
+      urdf_name = "/summit_ur_wholebody_control.urdf";
+    }
+    else
+    {
+      ROS_INFO_STREAM("Manipulator Controller");
+      urdf_name = "/summit_ur_manip_control.urdf";
+    } 
 
     vector<string> package_dirs;
     package_dirs.push_back(model_path);
     string urdfFileName = package_dirs[0] + urdf_name;
     robot_ = std::make_shared<holistic_controller::robot::RobotWrapper>(urdfFileName, package_dirs);
-    ctrl_ = std::make_shared<RobotController::SummitUR5Wrapper>(robot_);
+    ctrl_ = std::make_shared<RobotController::SummitUR5Wrapper>(robot_, is_wholebody_);
     ctrl_ ->initialize();
-
-
 
     // Server
     se3_server_ = std::make_shared<SE3ActionServer>("rci_action_manager/se3Control", nh, ctrl_);
@@ -50,74 +53,39 @@ int main(int argc, char ** argv){
     int nv = model.nv;
     int na = robot_->na();
 
-
+    nq_ = nq;
     J_.resize(6,nv);
-    ft_sensor_.resize(6);
-    q_.setZero(9);
-    v_.setZero(9);
-
+    q_.setZero(nq_);
+    v_.setZero(nv);
 
     ros::Rate loop_rate(100);
-    
 
-        
-    int i = 0;
-    VectorXd qpub(9);
-    qpub = q_;
-    bool controlFlag_ = false;
+    Reference desired;
+    desired.mobile_vel = Eigen::VectorXd::Zero(3);
+    desired.manip_pos = q_.tail(nq-3);
 
-    admit_flag_ = false;
-    init_admit_=  true;
 
     while(ros::ok()){
         if (robot_ok_)
         {
           ctrl_->update_joint(q_, v_);
-          ctrl_->update_ft(ft_sensor_);
-          // std::cout<<"Force Torque Sensor :"<<ft_sensor_.transpose()<<std::endl;
           se3_server_->compute(ros::Time::now());
           joint_posture_server_->compute(ros::Time::now());
           
-
-
+          // std::cout<<"[Simulator] oMi : \n"<<ctrl_->state().oMi<<std::endl;
+          
           if(!se3_server_ ->isrunning() && !joint_posture_server_->isrunning())
           {
-            if(admit_flag_)
-            {            
-              if (init_admit_)
-              {
-                ctrl_->initAdmittance();
-                init_admit_ = false;
-              }
-              else
-              {
-                ctrl_->AdmittanceControl();
-                // ctrl_->AdmittanceControl_v2();
-
-              }
-              qpub = ctrl_->get_result();
-              // std::cout<<"---------Admittance Control-----------"<<std::endl;
-            }
-            else{
-              qpub = qpub;
-            }
-
+            desired = desired;
+            desired.mobile_vel.setZero();
           }
-            // qpub = qpub;
+
           else
           {
-            admit_flag_ = true;
-            qpub = ctrl_->get_result();
+            desired = ctrl_->get_result();
           }
-          
+          publish(desired);
 
-          // std::cout<<"Q Pub :"<<qpub.transpose()<<std::endl;
-
-          std_msgs::Float64MultiArray msg;
-          for(int i=0; i<qpub.size(); i++) msg.data.push_back(qpub(i));
-          summit_ur5_publisher_.publish(msg);
-          
-          // std::cout<<"oMi : "<<ctrl_->oMi()<<std::endl;
         }
         ros::spinOnce();
         loop_rate.sleep();
@@ -125,23 +93,73 @@ int main(int argc, char ** argv){
 
 }
 
+void publish(Reference des)
+{
+  Eigen::VectorXd des_vec = Eigen::VectorXd::Zero(nq_);
+  // Whole body
+  if (is_wholebody_)
+  {
+    des_vec.head(3) = des.mobile_vel;
+    des_vec.tail(nq_-3) = des.manip_pos;
+  }
+  // Manip Only
+  else
+  {
+    des_vec.tail(nq_) = des.manip_pos;
+  }
+
+  // Mujoco
+  std_msgs::Float64MultiArray msg;
+  for(int i=0; i<des_vec.size(); i++) msg.data.push_back(des_vec(i));
+  summit_ur5_publisher_.publish(msg);
+
+
+
+  // RVIZ
+  std::vector<std::string> joint_names = {
+      "ur5e_shoulder_pan_joint", "ur5e_shoulder_lift_joint", "ur5e_elbow_joint",
+      "ur5e_wrist_1_joint", "ur5e_wrist_2_joint", "ur5e_wrist_3_joint",
+      "gripper_finger1_joint"
+  };
+
+  sensor_msgs::JointState joint_state_msg;
+  joint_state_msg.name = joint_names;
+  joint_state_msg.header.stamp = ros::Time::now();
+  joint_state_msg.position.resize(joint_names.size());
+
+  // std::cout<<q.size()<<std::endl;
+  if (is_wholebody_)
+  {
+    for(int i=0; i<des_vec.size()-3; i++) joint_state_msg.position[i] = des_vec(i+3);
+  }
+  else
+  {
+    for(int i=0; i<des_vec.size(); i++) joint_state_msg.position[i] = des_vec(i);
+  }
+  joint_state_msg.position.back() = 0.0;
+  rviz_publisher_.publish(joint_state_msg);
+
+}
 
 
 
 void jointStateCallback(const sensor_msgs::JointState::ConstPtr& msg) {
-  for(int i =0; i<9; i++)
+  
+  for(int i =0; i<nq_; i++)
   {
-    q_(i) = msg->position[i];
-    v_(i) = msg->velocity[i];
+    if (is_wholebody_)
+    {
+      q_(i) = msg->position[i];
+      v_(i) = msg->velocity[i];
+    }
+    else
+    {
+      q_(i) = msg->position[i+3];
+      v_(i) = msg->velocity[i+3];
+    }
   }
 
   robot_ok_= true;
 
 }
 
-void FTSensorCallback(const std_msgs::Float64MultiArray::ConstPtr& msg) {
-  for (int i=0; i<6; i++)
-    ft_sensor_(i) = msg->data[i];  
-
-      // std::copy(msg->data.begin() + 6, msg->data.end(), ft_sensor_.data());
-}

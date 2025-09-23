@@ -27,8 +27,8 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 rospack = rospkg.RosPack()
 package_path = rospack.get_path('sca_pkg')
 package_to_data = "/src/data/data_500.txt"
-package_to_data2 = "/src/data/data_500_svm2.txt"
-convert_to_libsvm(package_path+package_to_data, package_path+package_to_data2)
+package_to_data2 = "/src/data/data_500_svm_manip.txt"
+# convert_to_libsvm(package_path+package_to_data, package_path+package_to_data2)
 
 data_train = load_svmlight_file(package_path+package_to_data2)
 x_tens_train = torch.Tensor(data_train[0].toarray())
@@ -67,8 +67,8 @@ for cv in range(1): #increase the number of iterations to perform crossvalidatio
             self.l1 = nn.Linear(6, 128)
             self.l2 = nn.Linear(128, 128)
             self.l3 = nn.Linear(128, 64)
-            self.l4 = nn.Linear(64, 32)
-            self.l5 = nn.Linear(32, 2)
+            self.l4 = nn.Linear(64, 2)
+            # self.l5 = nn.Linear(32, 2)
             self.act = nn.Tanh()
             self.lsm = nn.LogSoftmax()
             self.sm = nn.Softmax(dim=-1)
@@ -80,8 +80,8 @@ for cv in range(1): #increase the number of iterations to perform crossvalidatio
             x = self.l3(x)
             x = self.act(x)
             x = self.l4(x)
-            x = self.act(x)
-            x = self.l5(x)
+            # x = self.act(x)
+            # x = self.l5(x)
             # x = self.lsm(x)
             return x
     
@@ -189,8 +189,8 @@ for cv in range(1): #increase the number of iterations to perform crossvalidatio
         total_sz += np.prod(net.state_dict()[key].size())
         savedict[key.replace(".", "_")]=net.state_dict()[key].cpu().numpy()
         
-    savemat(package_path + "/src/nn_mm_100.mat", savedict)
-    print("Model weights saved to nn_mm_100.mat")
+    savemat(package_path + "/src/nn_manip_100.mat", savedict)
+    print("Model weights saved to nn_manip_100.mat")
 
     for key in net.state_dict().keys():
         weight = net.state_dict()[key].cpu().numpy()

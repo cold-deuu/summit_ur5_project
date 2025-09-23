@@ -87,7 +87,7 @@ int main(int argc, char ** argv)
 
     // Get Self-Collision Map 
     std::string sca_pkg_path = ros::package::getPath("sca_pkg");
-    std::string package_to_collisionIdx = "/src/meshes/collision_map/mm_collision_map.txt";
+    std::string package_to_collisionIdx = "/src/meshes/collision_map/mm_collision_map_manip.txt";
     std::string collisionIdx_path = sca_pkg_path + package_to_collisionIdx;
     auto collisionMap = read_noncol_map(collisionIdx_path);
 
@@ -112,10 +112,13 @@ int main(int argc, char ** argv)
 	d_req.enable_nearest_points = true;    
 	c_req.enable_contact = true;
     bool thresFlag;
-    double thresholdDist = 0.15;
+    double thresholdDist = 0.10;
     double collisionDist = 0.03;
 
     double thresholdDist2 = 0.08;
+    
+    double thresholdDist_hand = 0.02;
+    double collisionDist_hand = 0.01;
 
 
     
@@ -147,7 +150,9 @@ int main(int argc, char ** argv)
                 fcl::collide(colObjs[link1], colObjs[link2], c_req, c_res);
                 if(c_res.isCollision()){
                     // std::cout << i <<"-th link and"<< link2 << "-th link Collision!" << std::endl;
-                    ROS_ERROR_STREAM("FCL : Collision");
+                    // ROS_ERROR_STREAM("FCL : Collision");
+                    ROS_ERROR_STREAM(i << "-th link and " << link2 << "-th link Collision!");
+
                     flag = true;
                     auto contact = c_res.getContact(0);
                     // std::cout << "Contact position: " << contact.pos.transpose() << std::endl;
@@ -189,6 +194,23 @@ int main(int argc, char ** argv)
                             flag = true;
                         }
                     }
+                    else if(link1 == 4 && link2 ==7)
+                    {
+                        if(d_res.min_distance < thresholdDist_hand && d_res.min_distance > collisionDist_hand)
+                        {
+                            thresFlag = true;
+                            std::cout << i <<"-th link and"<< link2 << "-th link Thres!" << std::endl;
+                            // ROS_WARN_STREAM("FCL : Collision base and link2");
+    
+                        }
+                        if(d_res.min_distance < collisionDist_hand)
+                        {
+                            // ROS_ERROR_STREAM("FCL : Collision base and link2");
+                            
+                            std::cout << i <<"-th link and"<< link2 << "-th link Collision!" << std::endl;
+                            flag = true;
+                        }
+                    }
                     else{
                         if(d_res.min_distance < thresholdDist && d_res.min_distance > collisionDist)
                         {
@@ -211,11 +233,11 @@ int main(int argc, char ** argv)
         }
         if (!flag && !thresFlag) std::cout<<"Stable"<<std::endl;
 
-        // auto mesh_new = update_mesh(mesh_zero, linkPoseSet);
-        // std::string newMesh_path = sca_pkg_path + "/new_mesh/new_mesh";
-        // write_txt_meshes(mesh_new, newMesh_path);
-        // iter++;
-        // if(iter >2000) break;
+        auto mesh_new = update_mesh(mesh_zero, linkPoseSet);
+        std::string newMesh_path = sca_pkg_path + "/new_mesh/new_mesh";
+        write_txt_meshes(mesh_new, newMesh_path);
+        iter++;
+        if(iter >2000) break;
     }
     auto mesh_new = update_mesh(mesh_zero, linkPoseSet);
     std::string newMesh_path = sca_pkg_path + "/new_mesh/new_mesh";

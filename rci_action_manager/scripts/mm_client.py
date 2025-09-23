@@ -37,7 +37,7 @@ class ControlSuiteShell(cmd.Cmd):
     def __init__(self):
             cmd.Cmd.__init__(self)
             rospy.init_node('cdpr_actions_client')
-
+            
             self.se3_ctrl_client = actionlib.SimpleActionClient('rci_action_manager/se3Control', rci_action_manager.msg.SE3Action)
             self.se3_ctrl_client.wait_for_server()
             self.joint_ctrl_client = actionlib.SimpleActionClient('rci_action_manager/jointControl', rci_action_manager.msg.JointPostureAction)
@@ -49,10 +49,8 @@ class ControlSuiteShell(cmd.Cmd):
         goal = rci_action_manager.msg.JointPostureGoal
         goal.duration = 3.0
         goal.target_joints = JointState()
-        # goal.target_joints.position = np.array([0.0, -1.57/2, 1.57,0.0, 0.0, 0.0])
-        goal.target_joints.position = np.array([0.0, -3.14/2, 1.57, -1.57 , -1.57, 0.0])
-
-
+        # goal.target_joints.position = np.array([np.pi, -1.57/2, 1.57,0.0, 0.0, 0.0])
+        goal.target_joints.position = np.array([0, -1.57, 1.57,-1.57, -1.57, 0.0])
 
         self.joint_ctrl_client.send_goal(goal)
         self.joint_ctrl_client.wait_for_result()
@@ -64,14 +62,15 @@ class ControlSuiteShell(cmd.Cmd):
     def do_wholebody(self, arg):
         print ("Wholebody Control")
         goal = rci_action_manager.msg.SE3Goal
-        goal.duration = 8
+        goal.duration = 3
         goal.target_pose = Pose()
         
-        goal.target_pose.position.x = -1.0
-        goal.target_pose.position.y = 0.0
-        goal.target_pose.position.z = -0.8
+        goal.target_pose.position.x = -0.4
 
-        goal.target_pose.orientation.x = 0
+        goal.target_pose.position.y = 0.0
+        goal.target_pose.position.z = -0.5
+
+        goal.target_pose.orientation.x = 0.0
         goal.target_pose.orientation.y = 0
         goal.target_pose.orientation.z = 0.0
         goal.target_pose.orientation.w = 1.0
@@ -91,7 +90,7 @@ class ControlSuiteShell(cmd.Cmd):
     def do_wholebody2(self, arg):
         print ("Wholebody Control")
         goal = rci_action_manager.msg.SE3Goal
-        goal.duration = 10
+        goal.duration = 3
         goal.target_pose = Pose()
         
         goal.target_pose.position.x = +0.3

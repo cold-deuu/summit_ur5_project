@@ -32,5 +32,5 @@ bool ConstraintInequality::setUpperBound(Eigen::VectorXd )
 
 bool ConstraintInequality::checkConstraint(Eigen::VectorXd x, double tol) const
 {
-    return ((A_*x).array() >= b_.array()+tol).all();
+    return ((A_*x).array() >= -(b_.array()+tol)).all();
 }

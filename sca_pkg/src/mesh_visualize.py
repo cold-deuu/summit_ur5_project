@@ -1,38 +1,15 @@
-import trimesh
+import open3d as o3d
 
-def load_custom_mesh(txt_path):
-    with open(txt_path, 'r') as f:
-        lines = f.readlines()
+src = "/home/chan/catkin_ws/src/robot_description/universal_robots_ur5e/assets/summit_xl_assembled.stl"
 
-    vertices = []
-    faces = []
-    mode = None
+mesh = o3d.io.read_triangle_mesh(src)
+mesh.compute_vertex_normals()
 
-    for line in lines:
-        line = line.strip()
-        if not line:
-            continue
-        if line == 'V':
-            mode = 'vertices'
-            continue
-        elif line == 'F':
-            mode = 'faces'
-            continue
-        elif line.isdigit() or line.isalpha():
-            # Ignore headers like "0" or "base_link"
-            continue
+# 목표 삼각형 수: 180,000 (여유 있게 200k 미만)
+target_faces = 180_000
+mesh_decim = mesh.simplify_quadric_decimation(target_number_of_triangles=target_faces)
 
-        parts = line.split()
-        if mode == 'vertices':
-            vertices.append([float(p) for p in parts])
-        elif mode == 'faces':
-            faces.append([int(p) for p in parts])
-
-    return trimesh.Trimesh(vertices=vertices, faces=faces)
-
-# 예시 경로 (수정 가능)
-txt_path = "/home/chan/catkin_ws/src/summit_xl_assembled.txt"
-
-# 메쉬 로드 및 시각화
-mesh = load_custom_mesh(txt_path)
-mesh.show()
+# OBJ로 저장(권장: 파서 안정적)
+dst = src.replace(".stl", "_decim.obj")
+o3d.io.write_triangle_mesh(dst, mesh_decim)
+print("saved:", dst)

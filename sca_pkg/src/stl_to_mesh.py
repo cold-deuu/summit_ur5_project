@@ -2,7 +2,6 @@ import os
 import trimesh
 import numpy as np
 from math import cos, sin
-from pathlib import Path
 
 def rpy_to_matrix(rpy):
     """Convert roll-pitch-yaw to rotation matrix."""
