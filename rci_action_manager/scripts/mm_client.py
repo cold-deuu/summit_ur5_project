@@ -65,10 +65,10 @@ class ControlSuiteShell(cmd.Cmd):
         goal.duration = 3
         goal.target_pose = Pose()
         
-        goal.target_pose.position.x = -0.4
+        goal.target_pose.position.x = 0.4
 
         goal.target_pose.position.y = 0.0
-        goal.target_pose.position.z = -0.5
+        goal.target_pose.position.z = 0.0
 
         goal.target_pose.orientation.x = 0.0
         goal.target_pose.orientation.y = 0
@@ -112,8 +112,49 @@ class ControlSuiteShell(cmd.Cmd):
             print ("action succeed")
         else:
             print ("action failed")
-            
 
+
+    def do_sca_se3(self, arg):
+        print ("Wholebody Control")
+        goal = rci_action_manager.msg.SE3Goal
+        goal.duration = 5
+        goal.target_pose = Pose()
+        
+        goal.target_pose.position.x = -0.6
+
+        goal.target_pose.position.y = 0.0
+        goal.target_pose.position.z = -0.5
+
+        goal.target_pose.orientation.x = 0.0
+        goal.target_pose.orientation.y = 0
+        goal.target_pose.orientation.z = 0.0
+        goal.target_pose.orientation.w = 1.0
+
+
+        goal.relative = True
+        goal.wholebody = True
+
+        self.se3_ctrl_client.send_goal(goal)
+        self.se3_ctrl_client.wait_for_result()
+        if (self.se3_ctrl_client.get_result()):
+            print ("action succeed")
+        else:
+            print ("action failed")
+
+    def do_sca_joint(self, arg):
+        print("JointPosture Control")
+        goal = rci_action_manager.msg.JointPostureGoal
+        goal.duration = 3.0
+        goal.target_joints = JointState()
+        goal.target_joints.position = np.array([np.pi, -1.57/2, 1.57,0.0, 0.0, 0.0])
+        # goal.target_joints.position = np.array([0, -1.57, 1.57,-1.57, -1.57, 0.0])
+
+        self.joint_ctrl_client.send_goal(goal)
+        self.joint_ctrl_client.wait_for_result()
+        if (self.joint_ctrl_client.get_result()):
+            print ("action succeed")
+        else:
+            print ("action failed")
 
     def do_quit(self, arg):
           'do quit'
