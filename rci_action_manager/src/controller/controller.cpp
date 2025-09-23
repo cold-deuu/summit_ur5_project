@@ -100,11 +100,10 @@ namespace RobotController
         jointRef_ -> SetGoalSample(qTarget);
         jointRef_ -> SetDuration(duration_);
 
-        // TEST 
         hqp_data_ -> addTask(scaTask_, 0);
         hqp_data_ -> addTask(jointVelLimitTask_, 0);
         hqp_data_ -> addTask(jointTask_, 1);
-        hqp_data_ -> addTask(baseFixTask_, 2);     
+        // hqp_data_ -> addTask(baseFixTask_, 2);     
 
     }
     

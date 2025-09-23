@@ -153,6 +153,7 @@ Eigen::VectorXd HQPData::solve()
             Eigen::VectorXd x(n_col_new + n_slack);
 
             double out = eiquadprog::solvers::solve_quadprog(Q, C, A_eq.transpose(), -b_eq, A_ineq.transpose(), b_ineq, x, activeSet, activeSetSize);
+
             sol_ = x.head(n_col_new);
             slack_eq_.push_back(x.tail(n_slack));
             slack_ineq_.push_back(Eigen::VectorXd(0));
@@ -183,14 +184,16 @@ Eigen::VectorXd HQPData::solve()
 
             Eigen::VectorXd x(n_col_new + n_slack);
             double out = eiquadprog::solvers::solve_quadprog(Q, C, A_eq.transpose(), -b_eq, A_ineq.transpose(), b_ineq, x, activeSet, activeSetSize);
+
+
             sol_ = x.head(n_col_new);
             slack_ineq_.push_back(x.tail(n_slack));
             slack_eq_.push_back(Eigen::VectorXd(0));
 
             A_eq = A_eq.leftCols(n_col_new);
         }
-        std::cout<<"[HQPData] Safety Ineq A : \n"<<A_ineq<<std::endl;
-        std::cout<<"[HQPData] Safety Ineq b : \n"<<b_ineq.transpose()<<std::endl;
+        // std::cout<<"[HQPData] Safety Ineq A : \n"<<A_ineq<<std::endl;
+        // std::cout<<"[HQPData] Safety Ineq b : \n"<<b_ineq.transpose()<<std::endl;
     
         // i start from 1
         b_eq.tail(slack_eq_[i-1].size()) -= slack_eq_[i-1];
