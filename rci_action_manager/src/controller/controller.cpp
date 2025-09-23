@@ -86,7 +86,7 @@ namespace RobotController
 
     void SummitUR5Wrapper::initJointPosture(VectorXd qTarget, ros::Duration duration)
     {
-        // Task
+        // Task Remove
         hqp_data_ -> initalize_all_data();
 
         stime_ = ros::Time::now();
@@ -130,7 +130,7 @@ namespace RobotController
 
     void SummitUR5Wrapper::initControl(SE3 target, ros::Duration duration, bool rel)
     {
-        // Task
+        // Task Remove
         hqp_data_ -> initalize_all_data();
 
         stime_ = ros::Time::now();
@@ -154,8 +154,8 @@ namespace RobotController
 
         // Task Insert
         hqp_data_ -> addTask(scaTask_, 0);
-        hqp_data_ -> addTask(se3Task_, 2);
-        hqp_data_ -> addTask(baseFixTask_, 1);        
+        hqp_data_ -> addTask(se3Task_, 1);
+        // hqp_data_ -> addTask(baseFixTask_, 1);        
 
     }
 
