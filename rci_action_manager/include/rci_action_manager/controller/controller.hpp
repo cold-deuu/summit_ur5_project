@@ -63,7 +63,7 @@ using namespace holistic_controller::math;
 namespace RobotController{
     class SummitUR5Wrapper{
         public: 
-            SummitUR5Wrapper(std::shared_ptr<holistic_controller::robot::RobotWrapper> robot);
+            SummitUR5Wrapper(std::shared_ptr<holistic_controller::robot::RobotWrapper> robot, bool is_wholebody);
             ~SummitUR5Wrapper(){};
 
             void initialize();
@@ -83,6 +83,12 @@ namespace RobotController{
 
             // Gravity Compensation
             VectorXd gravity_compensation();
+
+            // State Ruturn
+            State state()
+            {
+                return state_;
+            }
 
 
         private:
@@ -124,6 +130,9 @@ namespace RobotController{
     
             // Joint Limit
             std::map<std::string, Eigen::VectorXd> joint_vel_limit_;
+
+            // Option
+            bool is_wholebody_;
 
 
 

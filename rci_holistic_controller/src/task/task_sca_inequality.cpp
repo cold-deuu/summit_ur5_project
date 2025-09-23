@@ -32,14 +32,14 @@ std::shared_ptr<chanhqp::constraint::ConstraintBase> TaskSCAInequality::compute(
     sca_ineq_mat.setZero();
 
     sca_ineq_mat.block(0, state.n_mobile, 1, state.n_manip) = state.sca_dgamma_dq["manip"];
-    sca_ineq_vec(0) = 10.0 * std::log(state.sca_gamma["manip"]+1);
+    sca_ineq_vec(0) = 0.1 * std::log(state.sca_gamma["manip"]+1);
 
     if (is_wholebody_)
     {
         sca_ineq_mat.conservativeResize(2,state.n_var);
         sca_ineq_vec.conservativeResize(2);
         sca_ineq_mat.block(1, state.n_mobile, 1, state.n_manip) = state.sca_dgamma_dq["mobile"];
-        sca_ineq_vec(1) = 0.01 * std::log(state.sca_gamma["mobile"]+1);
+        sca_ineq_vec(1) = 0.1 * std::log(state.sca_gamma["mobile"]+1);
     }
 
     constraint_->setMatrix(sca_ineq_mat);

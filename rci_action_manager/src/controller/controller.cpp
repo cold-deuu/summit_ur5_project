@@ -8,8 +8,8 @@ using namespace holistic_controller::math;
 
 namespace RobotController
 {
-    SummitUR5Wrapper::SummitUR5Wrapper(std::shared_ptr<holistic_controller::robot::RobotWrapper> robot)
-    : robot_(robot)
+    SummitUR5Wrapper::SummitUR5Wrapper(std::shared_ptr<holistic_controller::robot::RobotWrapper> robot, bool is_wholebody)
+    : robot_(robot), is_wholebody_(is_wholebody)
     {
         model_ = robot_->model();
         Data data(model_);
@@ -20,10 +20,11 @@ namespace RobotController
 
         // is wholebody 추가
         state_.n_var = model_.nv;
-        state_.n_mobile = 3;
-        state_.n_manip = model_.nv -3;
+        if (is_wholebody_) state_.n_mobile = 3;
+        else state_.n_mobile = 0;
+        state_.n_manip = model_.nv -state_.n_mobile;
 
-        ref_.mobile_vel.resize(3);
+        ref_.mobile_vel.resize(state_.n_mobile);
         ref_.manip_pos.resize(state_.n_manip);
 
         // Trajectory
@@ -36,7 +37,7 @@ namespace RobotController
         // Task
         se3Task_ = std::make_shared<chanhqp::task::TaskSE3Equality>("se3_task");
         jointTask_ = std::make_shared<chanhqp::task::TaskJointPostureEquality>("joint_posture_task");
-        scaTask_ = std::make_shared<chanhqp::task::TaskSCAInequality>("sca_task", false);
+        scaTask_ = std::make_shared<chanhqp::task::TaskSCAInequality>("sca_task", true);
         baseFixTask_ = std::make_shared<chanhqp::task::TaskBaseFixEquality>("base_fix_task");
         hqp_data_ = std::make_shared<chanhqp::data::HQPData>();
         jointVelLimitTask_ = std::make_shared<chanhqp::task::TaskJointVelocityLimitInequality>("joint_vel_limit_task", false);
@@ -62,7 +63,7 @@ namespace RobotController
 
 
         // Gain Setting
-        se3Task_ -> Kp(1000);
+        se3Task_ -> Kp(400);
         se3Task_ -> Kd(40);
         jointTask_ -> Kp(10);
     
@@ -79,9 +80,8 @@ namespace RobotController
 
 
         state_.eef_vel = state_.J * state_.v;
-        state_.sca_gamma = summitUr5_scaManager_ -> forward_pass(state_.q.tail(6));
-        state_.sca_dgamma_dq = summitUr5_scaManager_ -> numerical_jacobian_gamma(state_.q.tail(6));
-
+        state_.sca_gamma = summitUr5_scaManager_ -> forward_pass(state_.q.tail(state_.n_manip));
+        state_.sca_dgamma_dq = summitUr5_scaManager_ -> numerical_jacobian_gamma(state_.q.tail(state_.n_manip));
     }
 
     void SummitUR5Wrapper::initJointPosture(VectorXd qTarget, ros::Duration duration)
@@ -120,8 +120,10 @@ namespace RobotController
         auto c = jointVelLimitTask_ -> constraint();
         bool joint_limit_ok = c->checkConstraint(qdot);
 
-        std::cout<<"[Controller] Joint Vel \n"<<qdot.tail(state_.n_manip).transpose()<<std::endl;
-        std::cout<<"[Controller] Joint Limit : "<<joint_limit_ok<<std::endl;
+        // std::cout<<"[Controller] n_manip :"<<state_.n_manip<<std::endl;
+        // std::cout<<"[Controller] manip_pos : "<<ref_.manip_pos.transpose()<<std::endl;
+        // std::cout<<"[Controller] Joint Vel \n"<<qdot.tail(state_.n_manip).transpose()<<std::endl;
+        // std::cout<<"[Controller] Joint Limit : "<<joint_limit_ok<<std::endl;
 
     }
 
@@ -152,7 +154,7 @@ namespace RobotController
 
         // Task Insert
         hqp_data_ -> addTask(scaTask_, 0);
-        hqp_data_ -> addTask(se3Task_, 0);
+        hqp_data_ -> addTask(se3Task_, 2);
         hqp_data_ -> addTask(baseFixTask_, 1);        
 
     }
