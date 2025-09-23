@@ -8,8 +8,10 @@ This project implements an optimal controller for a mobile manipulator using the
 ## Prerequisites
 Before you begin, ensure you have the following dependencies installed:
 
-1. **ROS 2 Humble**: Please follow the official installation instructions.
+1. **ROS 1 Noetic**: Please follow the official installation instructions.
 2. **pinocchio** :
-```bash
-roscore
-roslaunch my_pkg demo.launch```
+   For details, See the [official documents](https://github.com/stack-of-tasks/pinocchio). 
+  ```bash
+  sudo apt install ros-noetic-pinocchio
+  ```
+4. 
