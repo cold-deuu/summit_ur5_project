@@ -83,7 +83,7 @@ Follow these steps to launch the simulation and control the robot. Each command 
 
 ---
 **SE3 Tracking with Self-Collision Avoidance**
-![SE3Sca](doc/gif/sca_se3_wbc.gif)
+![SE3Sca](doc/gif/se3_sca_wbc.gif)
 
 ## To Do List
 - [ ] Integrate Admittance Controller (see ros-noetic devel)
