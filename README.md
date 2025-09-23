@@ -11,7 +11,7 @@ Before you begin, ensure you have the following dependencies installed:
 1. **ROS 1 Noetic**: Please follow the official installation instructions.
 2. **pinocchio** :
    For details, See the [official documents](https://github.com/stack-of-tasks/pinocchio). 
-  ```bash
-  sudo apt install ros-noetic-pinocchio
-  ```
+     ```bash
+     sudo apt install ros-noetic-pinocchio
+     ```
 4. 
