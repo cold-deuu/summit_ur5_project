@@ -9,8 +9,8 @@ def convert_bin_to_txt(bin_file, txt_file, shape):
     print(f"[OK] {os.path.basename(bin_file)} → {os.path.basename(txt_file)} (shape={shape})")
 
 # 절대 경로 설정
-BIN_DIR = "/home/chan/catkin_ws/src/sca_pkg/result/manip"
-TXT_DIR = "/home/chan/catkin_ws/src/sca_pkg/result/manip/result_txt"
+BIN_DIR = "/home/chan/catkin_ws/src/sca_pkg/result/mobile"
+TXT_DIR = "/home/chan/catkin_ws/src/sca_pkg/result/mobile/result_txt"
 # 결과 디렉토리가 없다면 생성
 os.makedirs(TXT_DIR, exist_ok=True)
 

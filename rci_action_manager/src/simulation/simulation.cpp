@@ -16,7 +16,12 @@ int main(int argc, char ** argv){
     // ROS
     ros::init(argc, argv, "hqp_summit_ur");
     ros::NodeHandle nh;
+
+    // ROS : Subscriber
     ros::Subscriber jointState = nh.subscribe("/mujoco/joint_states", 5, &jointStateCallback, ros::TransportHints().tcpNoDelay(true));
+    ros::Subscriber ftSensor = nh.subscribe("/mujoco/ft_sensor", 5, &FTSensorCallback, ros::TransportHints().tcpNoDelay(true));
+
+    // ROS : Publisher
     summit_ur5_publisher_ = nh.advertise<std_msgs::Float64MultiArray>("/mujoco_ctrl",1);
     rviz_publisher_ = nh.advertise<sensor_msgs::JointState>("/joint_states", 1);
 
@@ -57,22 +62,24 @@ int main(int argc, char ** argv){
     J_.resize(6,nv);
     q_.setZero(nq_);
     v_.setZero(nv);
+    ft_sensor_.setZero(6);
 
     ros::Rate loop_rate(100);
 
     Reference desired;
     desired.mobile_vel = Eigen::VectorXd::Zero(3);
-    desired.manip_pos = q_.tail(nq-3);
+    desired.manip_pos = Eigen::VectorXd::Zero(6);
+    // desired.manip_pos = q_.tail(nq-3);
+    desired.manip_pos << 0.0, -1.57, 1.57, -1.57, -1.57, 0.0;
 
 
     while(ros::ok()){
         if (robot_ok_)
         {
           ctrl_->update_joint(q_, v_);
+          ctrl_->update_ft(ft_sensor_);
           se3_server_->compute(ros::Time::now());
           joint_posture_server_->compute(ros::Time::now());
-          
-          // std::cout<<"[Simulator] oMi : \n"<<ctrl_->state().oMi<<std::endl;
           
           if(!se3_server_ ->isrunning() && !joint_posture_server_->isrunning())
           {
@@ -89,6 +96,9 @@ int main(int argc, char ** argv){
         }
         ros::spinOnce();
         loop_rate.sleep();
+        
+        // std::cout<<"[Simulator] q : \n"<<q_.transpose()<<std::endl;
+
     }
 
 }
@@ -163,3 +173,9 @@ void jointStateCallback(const sensor_msgs::JointState::ConstPtr& msg) {
 
 }
 
+void FTSensorCallback(const std_msgs::Float64MultiArray::ConstPtr& msg) {
+  for (int i=0; i<6; i++)
+    ft_sensor_(i) = msg->data[i];  
+
+      // std::copy(msg->data.begin() + 6, msg->data.end(), ft_sensor_.data());
+}

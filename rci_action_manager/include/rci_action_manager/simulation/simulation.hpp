@@ -71,6 +71,9 @@ std::vector<ros::Publisher> pubSet_;
 // std::unique_ptr<PlatformSE3ActionServer> platform_action_server_;
 // std::unique_ptr<FrankaSE3ActionServer> franka_action_server_;
 
+// Sensor
+Eigen::VectorXd ft_sensor_;
+
 
 //globla_variable
 Eigen::VectorXd q_,v_,l_;     
@@ -86,6 +89,7 @@ void get_joint_state();
 void gazebo_publish_(std::vector<ros::Publisher> u, Eigen::VectorXd q);
 void linkStatesCallback(const gazebo_msgs::LinkStates::ConstPtr& msg);
 void jointStateCallback(const sensor_msgs::JointState::ConstPtr& msg);
+void FTSensorCallback(const std_msgs::Float64MultiArray::ConstPtr& msg);
 
 void publish(Reference des);
 

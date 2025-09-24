@@ -65,7 +65,7 @@ class ControlSuiteShell(cmd.Cmd):
         goal.duration = 3
         goal.target_pose = Pose()
         
-        goal.target_pose.position.x = 0.4
+        goal.target_pose.position.x = 0.2
 
         goal.target_pose.position.y = 0.0
         goal.target_pose.position.z = 0.0
@@ -144,7 +144,7 @@ class ControlSuiteShell(cmd.Cmd):
     def do_sca_joint(self, arg):
         print("JointPosture Control")
         goal = rci_action_manager.msg.JointPostureGoal
-        goal.duration = 3.0
+        goal.duration = 13.0
         goal.target_joints = JointState()
         goal.target_joints.position = np.array([np.pi, -1.57/2, 1.57,0.0, 0.0, 0.0])
         # goal.target_joints.position = np.array([0, -1.57, 1.57,-1.57, -1.57, 0.0])

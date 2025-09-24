@@ -8,7 +8,7 @@ namespace chanhqp{
         class TaskSE3Equality : public TaskBase
         {
             public:
-                TaskSE3Equality(const std::string & name);
+                TaskSE3Equality(const std::string & name, bool is_admittance);
                 
                 bool getSE3Traj(pinocchio::SE3 trajSample);
                 bool getVectorTraj(Eigen::VectorXd );
@@ -16,11 +16,15 @@ namespace chanhqp{
                 // chanhqp::constraint::ConstraintBase & compute(State state);
                 std::shared_ptr<chanhqp::constraint::ConstraintBase> compute(State state);
                 const std::shared_ptr<chanhqp::constraint::ConstraintBase> constraint() const;
-
+            
+                // Control with Admittance
+                void setAdmittance(Eigen::VectorXd admittance) {task_space_admittance_ = admittance;};
             protected:
                 std::shared_ptr<chanhqp::constraint::ConstraintEquality> constraint_;
                 // chanhqp::constraint::ConstraintEquality constraint_;
                 pinocchio::SE3 ref_se3_;
+                Eigen::VectorXd task_space_admittance_;
+                bool is_admittance_;
         };
     };
 };

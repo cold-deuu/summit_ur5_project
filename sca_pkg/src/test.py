@@ -54,7 +54,7 @@ def main():
 
     rospack = rospkg.RosPack()
     package_path = rospack.get_path('sca_pkg')
-    mat = loadmat(package_path + '/src/nn_mobile_100.mat')     
+    mat = loadmat(package_path + '/src/nn_mobile_500.mat')     
     weights = {
         'l1_weight': mat['l1_weight'],
         'l1_bias': mat['l1_bias'].flatten(),

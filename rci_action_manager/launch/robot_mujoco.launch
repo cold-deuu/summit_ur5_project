@@ -9,8 +9,9 @@
   <node pkg="rci_action_manager" type="rci_action_manager_simulation" name="rci_action_manager_simulation" output="screen" />
 
   <param name="robot_description" command="$(find xacro)/xacro '$(find summit_xl_description)/summit_ur5e_robot.urdf.xacro' hand:=$(arg hand) robot_namespace:=$(arg robot_namespace)"/>
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find summit_xl_description)/rviz/summit_ur5_rviz.rviz"/>
-  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+  <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find summit_xl_description)/rviz/summit_ur5_rviz.rviz"/> -->
+  <!-- <node name="joint_state_publisher_gui" pkg="joint_state_publisher_gui" type="joint_state_publisher_gui" /> -->
+  <!-- <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" /> -->
 
   <param name="whole_body" type="bool" value="$(arg whole_body)"/>
 </launch>

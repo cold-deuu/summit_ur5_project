@@ -44,12 +44,12 @@ bool JointPostureActionServer::compute(ros::Time ctime)
   
   mu_->jointPosture(ctime);
   
-  if (ctime.toSec() - start_time_.toSec() > goal_->duration + 1.0){
+  if (ctime.toSec() - start_time_.toSec() > goal_->duration + 2.0){
     setSucceeded();
     return true;
   }
 
-  if (ctime.toSec() - start_time_.toSec()  > goal_->duration+ 2.0){
+  if (ctime.toSec() - start_time_.toSec()  > goal_->duration+ 3.0){
     setAborted();
     return false;
   }

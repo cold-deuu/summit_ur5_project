@@ -4,6 +4,9 @@
 //Pinocchio Header
 #include <pinocchio/fwd.hpp>
 #include <pinocchio/algorithm/joint-configuration.hpp> 
+#include "pinocchio/parsers/urdf.hpp"
+#include "pinocchio/algorithm/kinematics.hpp"
+#include "pinocchio/algorithm/frames.hpp"
 
 // Eigen Header
 #include <Eigen/Dense>
@@ -80,6 +83,8 @@ namespace RobotController{
             void initJointPosture(VectorXd qTarget, ros::Duration duration);
             void jointPosture(ros::Time ctime);
 
+            // Control : Admittance
+            void update_ft(Eigen::VectorXd ft);
 
             // Gravity Compensation
             VectorXd gravity_compensation();
@@ -125,6 +130,9 @@ namespace RobotController{
             // Robot State
             State state_;
 
+            // Admittance Controller
+            Eigen::VectorXd ft_sensor_, xdot_admit_;
+            
             // Control Input
             Reference ref_;
     
@@ -134,7 +142,8 @@ namespace RobotController{
             // Option
             bool is_wholebody_;
 
-
+            // for Control
+            Data data_ctrl_;
 
 
             
