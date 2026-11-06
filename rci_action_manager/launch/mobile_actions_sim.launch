@@ -1,0 +1,23 @@
+<launch>
+  <arg name="headless" default="false"/>
+  <arg name="rviz" default="true"/>
+  <param name="whole_body" value="true"/>
+  <param name="robot_description" textfile="$(find summit_ur5e_moveit_config)/config/mobile_manipulator.urdf"/>
+  <node pkg="rci_action_manager" type="moveit_mujoco_backend.py" name="mujoco_backend" output="screen">
+    <env name="MUJOCO_GL" value="$(eval 'disable' if arg('headless') else 'glfw')"/>
+    <rosparam command="load" file="$(find rci_action_manager)/config/mobile_backend.yaml"/>
+    <param name="model_file" value="$(find summit_ur5e_moveit_config)/config/mobile_mujoco_scene.xml"/>
+    <param name="base_mode" value="commanded"/>
+    <param name="headless" value="$(arg headless)"/>
+  </node>
+  <node pkg="rci_action_manager" type="rci_action_manager_simulation" name="mobile_action_controller" output="screen">
+    <param name="model_file" value="$(find summit_ur5e_moveit_config)/config/mobile_action_control.urdf"/>
+    <param name="se3_kp" value="12.0"/>
+    <param name="se3_kd" value="0.2"/>
+    <param name="publish_command_joint_states" value="false"/>
+    <param name="admittance/sensor_offset_z" value="0.0"/>
+    <rosparam param="admittance/sensor_to_wrist_rpy">[-1.5707963267948966, 0, 0]</rosparam>
+  </node>
+  <node pkg="robot_state_publisher" type="robot_state_publisher" name="mobile_robot_state_publisher"/>
+  <node if="$(arg rviz)" pkg="rviz" type="rviz" name="mobile_rviz"/>
+</launch>

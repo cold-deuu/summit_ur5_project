@@ -1,0 +1,6 @@
+# Full uploaded mobile URDF, arm-only HQP. Base is held by the MuJoCo adapter.
+tracking_admittance: true
+admittance_mode: hold
+admittance:
+  sensor_to_wrist_xyz: [0, 0, 0]
+  sensor_to_wrist_rpy: [-1.5707963267948966, 0, 0]

@@ -1,0 +1,52 @@
+# Standalone lab UR5e. Model path and gains are supplied by launch arguments.
+joint_names: [shoulder_pan_joint, shoulder_lift_joint, elbow_joint, wrist_1_joint, wrist_2_joint, wrist_3_joint]
+wrist_joint: wrist_3_joint
+joint_state_topic: /joint_states
+command_interface: direct_position
+command_topic: /hqp_joint_position_controller/command
+position_controller: hqp_joint_position_controller
+require_position_controller: true
+wrench_topic: /hqp_moveit/wrench
+wrench_frame: wrist_3_link
+rate: 100.0
+require_driver_ready: true
+limit_joint_admittance: true
+latch_faults: true
+# Isolate nominal tracking while the no-contact wrench offset is investigated.
+# HOLDING admittance remains enabled.
+tracking_admittance: false
+# HOLDING only; TRACKING remains bypassed by tracking_admittance=false.
+admittance_enabled: true
+# Follow local joint-space path progress, independent of planner timestamps.
+geometric_tracking: true
+path_lookahead: 0.03 # Euclidean joint-space radians, not metres/seconds.
+path_search_window: 0.12
+path_stall_timeout: 15.0
+# Smooth scalar spline progress; these are reference-generation limits, not
+# the disabled QP acceleration or Cartesian admittance acceleration bounds.
+path_speed: 1.0
+path_acceleration: 2.0
+path_jerk: 10.0
+path_clock_bandwidth: 10.0
+admittance_mode: spring
+goal_tolerance: 0.003
+goal_velocity_tolerance: 0.02
+telemetry_enabled: true
+telemetry_frame: base_link
+# Retain the topic HQP's existing acceleration and predicted-torque constraints.
+admittance:
+  # Remove Cartesian displacement clipping; retain spring and motion limits.
+  displacement_limits_enabled: false
+  # Disable both Cartesian acceleration clipping and joint-offset slew limits.
+  acceleration_limits_enabled: false
+  damping: [150, 150, 150, 10.0, 10.0, 10.0]
+  velocity_limit: [0.06, 0.06, 0.06, 0.08, 0.08, 0.08]
+  linear_velocity_norm_limit: 0.08
+  bias_enabled: true
+  bias_samples: 100
+  wrench_sign: 1.0
+  sensor_to_wrist_xyz: [0, 0, 0]
+  sensor_to_wrist_rpy: [0, 0, 0]
+  # TRACKING bypasses admittance. HOLDING restores toward its equilibrium.
+  tracking_stiffness: [0, 0, 0, 0, 0, 0]
+  holding_stiffness: [150, 150, 150, 2.0, 2.0, 2.0]

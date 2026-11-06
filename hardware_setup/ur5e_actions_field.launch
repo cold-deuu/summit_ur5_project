@@ -1,0 +1,72 @@
+<launch>
+  <!-- Reuse the existing FIELD driver and running scaled JTC. Arm only.
+       Starts no driver, motion-controller switch, planner or action goal. -->
+  <arg name="arm_namespace" default="/brl_robot/ur5e"/>
+  <arg name="command_enabled" default="true"/>
+  <arg name="admittance_enabled" default="false"/>
+  <arg name="arm_velocity_limit" default="1.57"/>
+  <arg name="joint_kp" default="50.0"/>
+  <arg name="se3_kp" default="50.0"/>
+  <arg name="se3_kd" default="1.0"/>
+  <arg name="command_horizon" default="0.02"/>
+  <arg name="following_lag_seconds" default="0.06"/>
+  <arg name="tracking_lag_margin" default="0.015"/>
+  <arg name="model_file" default="$(dirname)/field/ur5e_arm.urdf"/>
+  <arg name="start_speed_scaling_controller" default="true"/>
+  <arg name="record" default="true"/>
+  <arg name="log_dir" default="$(env HOME)/catkin_ws/artifacts/field_action_logs"/>
+  <param name="whole_body" value="false"/>
+  <!-- This plugin claims only a read-only speed-scaling interface. It neither
+       stops nor replaces the existing scaled joint trajectory controller. -->
+  <group if="$(arg start_speed_scaling_controller)" ns="$(arg arm_namespace)">
+    <rosparam param="hqp_speed_scaling_state_controller">
+      type: scaled_controllers/SpeedScalingStateController
+      publish_rate: 100
+    </rosparam>
+    <node pkg="controller_manager" type="spawner" name="hqp_speed_scaling_spawner"
+          args="hqp_speed_scaling_state_controller" output="screen"/>
+  </group>
+  <node pkg="rci_action_manager" type="ur_wrench_to_wrist.py" name="field_action_wrench_to_wrist" output="screen">
+    <param name="source_frame" value="ur5e_tool0_controller"/>
+    <param name="target_frame" value="ur5e_wrist_3_link"/>
+    <remap from="/wrench" to="$(arg arm_namespace)/wrench"/>
+    <remap from="/hqp_shadow/wrench" to="/hqp_field/wrench"/>
+  </node>
+  <node pkg="rci_action_manager" type="rci_action_manager_real" name="real_action_controller" output="screen">
+    <rosparam command="load" file="$(find rci_action_manager)/config/ur5e_field_action.yaml"/>
+    <param name="model_file" value="$(arg model_file)"/>
+    <param name="wrist_joint" value="ur5e_wrist_3_joint"/>
+    <param name="telemetry_frame" value="ur5e_base_link"/>
+    <param name="joint_state_topic" value="$(arg arm_namespace)/joint_states"/>
+    <param name="stamped_ft" value="true"/>
+    <param name="ft_topic" value="/hqp_field/wrench"/>
+    <param name="wrench_frame" value="ur5e_wrist_3_link"/>
+    <param name="ft_bias_samples" value="100"/>
+    <param name="state_timeout" value="0.25"/>
+    <param name="require_driver_ready" value="true"/>
+    <param name="speed_scaling_topic" value="$(arg arm_namespace)/speed_scaling_factor"/>
+    <param name="driver_program_topic" value="$(arg arm_namespace)/ur_hardware_interface/robot_program_running"/>
+    <param name="command_enabled" value="$(arg command_enabled)"/>
+    <param name="admittance_enabled" value="$(arg admittance_enabled)"/>
+    <param name="command_interface" value="trajectory"/>
+    <param name="command_topic" value="$(arg arm_namespace)/ur5e_scaled_pos_joint_traj_controller/command"/>
+    <param name="rate" value="100"/>
+    <param name="command_horizon" value="$(arg command_horizon)"/>
+    <param name="require_trajectory_controller" value="true"/>
+    <param name="controller_manager_service" value="$(arg arm_namespace)/controller_manager/list_controllers"/>
+    <param name="trajectory_controller" value="ur5e_scaled_pos_joint_traj_controller"/>
+    <param name="controller_joints_parameter" value="$(arg arm_namespace)/ur5e_scaled_pos_joint_traj_controller/joints"/>
+    <param name="publish_command_joint_states" value="false"/>
+    <param name="enable_moveit_action" value="false"/>
+    <param name="arm_velocity_limit" value="$(arg arm_velocity_limit)"/>
+    <param name="max_position_step" value="$(eval 1.2 * float(arg('arm_velocity_limit')) * float(arg('following_lag_seconds')) + float(arg('tracking_lag_margin')))"/>
+    <param name="joint_kp" value="$(arg joint_kp)"/>
+    <param name="joint_goal_tolerance" value="0.003"/>
+    <param name="se3_kp" value="$(arg se3_kp)"/>
+    <param name="se3_kd" value="$(arg se3_kd)"/>
+  </node>
+  <node if="$(arg record)" pkg="rci_action_manager" type="log_action_telemetry.py" name="field_action_telemetry_logger" output="screen">
+    <param name="controller_namespace" value="/real_action_controller"/>
+    <param name="output_root" value="$(arg log_dir)"/>
+  </node>
+</launch>

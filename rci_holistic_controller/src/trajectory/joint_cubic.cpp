@@ -9,8 +9,8 @@ namespace holistic_controller{
     namespace trajectory{
         JointCubicTrajectory::JointCubicTrajectory(const std::string & filename, int armjoint_num){
             m_na = armjoint_num;
-            m_init.setZero(7);
-            m_goal.setZero(7);
+            m_init.setZero(m_na);
+            m_goal.setZero(m_na);
             std::cout<<m_na<<std::endl;
 
         }

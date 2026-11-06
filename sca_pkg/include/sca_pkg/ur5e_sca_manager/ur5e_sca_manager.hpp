@@ -37,15 +37,19 @@ namespace rci_summit_ur5_controller
             Eigen::MatrixXd read_txt_to_matrix(const std::string& filename);
             Eigen::VectorXd tanh(const Eigen::VectorXd& x);
             Eigen::VectorXd softmax(const Eigen::VectorXd& x);
-            double forward_pass(const Eigen::VectorXd& q);
-            Eigen::MatrixXd numerical_jacobian_gamma(const Eigen::VectorXd& q, double h=1e-6);
+            std::map<std::string, double> forward_pass(const Eigen::VectorXd& q);
+            std::map<std::string, Eigen::MatrixXd> numerical_jacobian_gamma(const Eigen::VectorXd& q, double h=1e-6);
 
         private:
             // Variables
-            Eigen::MatrixXd weight1_, weight2_, weight3_, weight4_, weight5_;
-            Eigen::VectorXd bias1_, bias2_, bias3_, bias4_, bias5_;
-            std::vector<Eigen::MatrixXd> weights_;
-            std::vector<Eigen::VectorXd> biases_;
+            Eigen::MatrixXd mobile_weight1_, mobile_weight2_, mobile_weight3_, mobile_weight4_, mobile_weight5_;
+            Eigen::MatrixXd manip_weight1_, manip_weight2_, manip_weight3_, manip_weight4_, manip_weight5_;
+            Eigen::VectorXd mobile_bias1_, mobile_bias2_, mobile_bias3_, mobile_bias4_ ;
+            Eigen::VectorXd manip_bias1_, manip_bias2_, manip_bias3_, manip_bias4_;
+            std::vector<Eigen::MatrixXd> mobile_weights_, manip_weights_;
+            std::vector<Eigen::VectorXd> mobile_biases_, manip_biases_;
+            
+            // std::map<std::vector<Eigen::MatrixXd>, std::string> J
 
 
 

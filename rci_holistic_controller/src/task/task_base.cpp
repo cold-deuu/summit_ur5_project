@@ -2,15 +2,23 @@
 
 using namespace chanhqp::task;
 
-TaskBase::TaskBase(std::string & name):
+TaskBase::TaskBase(const std::string & name):
     name_(name)
+{
 
-const double TaskBase::Kp(double Kp) const
+}
+
+void TaskBase::Kp(double Kp)
 {
     Kp_ = Kp;
 }
 
-const double TaskBase::Kd(double Kd) const
+void TaskBase::Kd(double Kd)
 {
     Kd_ = Kd;
+}
+
+const std::string & TaskBase::name() const
+{
+  return name_;
 }

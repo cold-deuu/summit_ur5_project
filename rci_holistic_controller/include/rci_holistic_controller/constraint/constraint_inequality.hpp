@@ -1,5 +1,5 @@
-#ifndef __constraint_equality_hpp__
-#define __constraint_equality_hpp__
+#ifndef __constraint_inequality_hpp__
+#define __constraint_inequality_hpp__
 
 #include <rci_holistic_controller/constraint/constraint_base.hpp>
 

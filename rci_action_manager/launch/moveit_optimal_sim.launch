@@ -1,0 +1,23 @@
+<launch>
+  <arg name="mobile" default="true"/>
+  <arg name="headless" default="false"/>
+  <arg name="rviz" default="true"/>
+  <arg name="planning" default="true"/>
+  <param name="whole_body" value="$(arg mobile)"/>
+  <node pkg="rci_action_manager" type="moveit_mujoco_backend.py" name="mujoco_backend" output="screen">
+    <env name="MUJOCO_GL" value="$(eval 'disable' if arg('headless') else 'glfw')"/>
+    <param name="headless" value="$(arg headless)"/>
+    <rosparam if="$(arg mobile)" command="load" file="$(find rci_action_manager)/config/mobile_backend.yaml"/>
+    <param if="$(arg mobile)" name="model_file" value="$(find summit_ur5e_moveit_config)/config/mobile_mujoco_scene.xml"/>
+  </node>
+  <node pkg="rci_action_manager" type="moveit_optimal_sim" name="moveit_optimal_controller" output="screen">
+    <rosparam command="load" file="$(find rci_action_manager)/config/moveit_optimal.yaml"/>
+    <rosparam if="$(arg mobile)" command="load" file="$(find rci_action_manager)/config/moveit_optimal_mobile.yaml"/>
+    <param if="$(arg mobile)" name="urdf" value="$(find summit_ur5e_moveit_config)/config/mobile_manipulator.urdf"/>
+    <param name="command_enabled" value="true"/>
+  </node>
+  <include if="$(arg planning)" file="$(find summit_ur5e_moveit_config)/launch/planning.launch">
+    <arg name="rviz" value="$(arg rviz)"/>
+    <arg name="mobile" value="$(arg mobile)"/>
+  </include>
+</launch>

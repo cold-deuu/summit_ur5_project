@@ -20,6 +20,8 @@
   <depend>boost</depend>
   <depend>graphviz</depend>
   <depend>roscpp</depend>
+  <depend>nav_msgs</depend>
+  <depend>tf</depend>
 
   <buildtool_depend>catkin</buildtool_depend>
 

@@ -61,7 +61,7 @@ int nq_;
 
 //Subs
 // ros::Publisher armPub1_, armPub2_, armPub3_, armPub4_, armPub5_, armPub6_, mobilePub_;
-ros::Publisher summit_ur5_publisher_;
+ros::Publisher summit_ur5_publisher_, rviz_publisher_;
 //msg
 std::vector<ros::Publisher> pubSet_;
 
@@ -71,14 +71,14 @@ std::vector<ros::Publisher> pubSet_;
 // std::unique_ptr<PlatformSE3ActionServer> platform_action_server_;
 // std::unique_ptr<FrankaSE3ActionServer> franka_action_server_;
 
+// Sensor
+Eigen::VectorXd ft_sensor_;
+
 
 //globla_variable
 Eigen::VectorXd q_,v_,l_;     
 Eigen::VectorXd base_q_, base_v_;
 Eigen::MatrixXd J_;
-
-// Sensor
-Eigen::VectorXd ft_sensor_;
 // pinocchio::SE3 wTep_;
 // double dur_;
 
@@ -91,6 +91,6 @@ void linkStatesCallback(const gazebo_msgs::LinkStates::ConstPtr& msg);
 void jointStateCallback(const sensor_msgs::JointState::ConstPtr& msg);
 void FTSensorCallback(const std_msgs::Float64MultiArray::ConstPtr& msg);
 
+void publish(Reference des);
 
-// Admittance
-bool admit_flag_, init_admit_;
+

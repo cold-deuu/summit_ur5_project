@@ -1,0 +1,32 @@
+# Match ur5e_moveit_real.launch defaults; RViz scaling multiplies these limits.
+joint_limits:
+  elbow_joint:
+    has_acceleration_limits: true
+    has_velocity_limits: true
+    max_acceleration: 0.8
+    max_velocity: 1.57
+  shoulder_lift_joint:
+    has_acceleration_limits: true
+    has_velocity_limits: true
+    max_acceleration: 0.8
+    max_velocity: 1.57
+  shoulder_pan_joint:
+    has_acceleration_limits: true
+    has_velocity_limits: true
+    max_acceleration: 0.8
+    max_velocity: 1.57
+  wrist_1_joint:
+    has_acceleration_limits: true
+    has_velocity_limits: true
+    max_acceleration: 1.0
+    max_velocity: 1.57
+  wrist_2_joint:
+    has_acceleration_limits: true
+    has_velocity_limits: true
+    max_acceleration: 1.0
+    max_velocity: 1.57
+  wrist_3_joint:
+    has_acceleration_limits: true
+    has_velocity_limits: true
+    max_acceleration: 1.0
+    max_velocity: 1.57

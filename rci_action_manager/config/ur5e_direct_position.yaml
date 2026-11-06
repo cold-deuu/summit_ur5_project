@@ -1,0 +1,4 @@
+hqp_joint_position_controller:
+  type: position_controllers/JointGroupPositionController
+  # Float64MultiArray has no names. This order MUST match both HQP node models.
+  joints: [shoulder_pan_joint, shoulder_lift_joint, elbow_joint, wrist_1_joint, wrist_2_joint, wrist_3_joint]

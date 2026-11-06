@@ -1,0 +1,37 @@
+trajectory_topic: /rci_action_manager/moveit_plan
+joint_names: [ur5e_shoulder_pan_joint, ur5e_shoulder_lift_joint, ur5e_elbow_joint, ur5e_wrist_1_joint, ur5e_wrist_2_joint, ur5e_wrist_3_joint]
+rate: 100.0
+kp: 12.0
+regularization: 0.00001
+start_tolerance: 0.05
+path_tolerance: 0.25
+goal_tolerance: 0.015
+goal_velocity_tolerance: 0.025
+goal_timeout: 4.0
+transition_duration: 0.4
+state_timeout: 0.25
+ft_timeout: 0.25
+position_margin: 0.0
+max_points: 5000
+torque_limits: true
+tracking_admittance: true
+admittance_mode: spring
+limits:
+  velocity: [0.4, 0.4, 0.4, 0.5, 0.5, 0.5]
+  acceleration: [0.8, 0.8, 0.8, 1.0, 1.0, 1.0]
+  effort: [150, 150, 150, 28, 28, 28]
+admittance:
+  mass: [3, 3, 3, 0.3, 0.3, 0.3]
+  damping: [35, 35, 35, 3.5, 3.5, 3.5]
+  tracking_stiffness: [100, 100, 100, 10, 10, 10]
+  holding_stiffness: [100, 100, 100, 10, 10, 10]
+  deadband: [0.8, 0.8, 0.8, 0.08, 0.08, 0.08]
+  cutoff_hz: 10.0
+  displacement_limit: [0.08, 0.08, 0.08, 0.25, 0.25, 0.25]
+  velocity_limit: [0.06, 0.06, 0.06, 0.2, 0.2, 0.2]
+  bias_enabled: true
+  bias_samples: 100
+  bias: [0, 0, 0, 0, 0, 0]
+  wrench_sign: -1.0
+  sensor_to_wrist_xyz: [0, 0, 0.1]
+  sensor_to_wrist_rpy: [0, 0, 0]

@@ -1,0 +1,37 @@
+<launch>
+  <!-- Existing UR driver + direct position controller must already be running.
+       This node subscribes to trajectories only; it starts no MoveIt planner. -->
+  <arg name="command_enabled" default="true"/>
+  <arg name="joint_kp" default="50.0"/>
+  <arg name="arm_velocity_limit" default="1.57"/>
+  <arg name="acceleration_limits" default="false"/>
+  <arg name="admittance_enabled" default="true"/>
+  <arg name="tracking_lag_margin" default="0.015"/>
+  <!-- Same following-lag allowance as the native action server. -->
+  <arg name="following_lag_seconds" default="0.04"/>
+  <arg name="command_topic" default="/hqp_joint_position_controller/command"/>
+  <arg name="require_position_controller" default="true"/>
+  <arg name="record" default="true"/>
+  <arg name="log_dir" default="$(env HOME)/catkin_ws/artifacts/moveit_real_logs"/>
+  <node pkg="rci_action_manager" type="ur_wrench_to_wrist.py" name="moveit_wrench_to_wrist" output="screen">
+    <remap from="/hqp_shadow/wrench" to="/hqp_moveit/wrench"/>
+  </node>
+  <node pkg="rci_action_manager" type="moveit_optimal_real" name="moveit_optimal_controller" output="screen">
+    <rosparam command="load" file="$(find rci_action_manager)/config/moveit_optimal.yaml"/>
+    <rosparam command="load" file="$(find rci_action_manager)/config/ur5e_action_admittance.yaml"/>
+    <rosparam command="load" file="$(find rci_action_manager)/config/moveit_optimal_ur5e_direct.yaml"/>
+    <param name="urdf" value="$(dirname)/calibration/ur5e_calibrated.urdf"/>
+    <param name="kp" value="$(arg joint_kp)"/>
+    <param name="acceleration_limits" value="$(arg acceleration_limits)"/>
+    <param name="admittance_enabled" value="$(arg admittance_enabled)"/>
+    <param name="command_enabled" value="$(arg command_enabled)"/>
+    <param name="command_topic" value="$(arg command_topic)"/>
+    <param name="require_position_controller" value="$(arg require_position_controller)"/>
+    <rosparam param="limits/velocity" subst_value="true">[$(arg arm_velocity_limit), $(arg arm_velocity_limit), $(arg arm_velocity_limit), $(arg arm_velocity_limit), $(arg arm_velocity_limit), $(arg arm_velocity_limit)]</rosparam>
+    <param name="max_command_gap" value="$(eval 1.2 * float(arg('arm_velocity_limit')) * float(arg('following_lag_seconds')) + float(arg('tracking_lag_margin')))"/>
+  </node>
+  <node if="$(arg record)" pkg="rci_action_manager" type="log_action_telemetry.py" name="moveit_telemetry_logger" output="screen">
+    <param name="controller_namespace" value="/moveit_optimal_controller"/>
+    <param name="output_root" value="$(arg log_dir)"/>
+  </node>
+</launch>

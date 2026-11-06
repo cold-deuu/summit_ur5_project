@@ -1,0 +1,13 @@
+<launch>
+  <!-- The deployment team supplies its hardware launch. No MoveIt is started. -->
+  <arg name="mobile" default="true"/>
+  <arg name="hardware_launch" default=""/>
+  <arg name="command_enabled" default="false"/>
+  <include if="$(eval arg('hardware_launch') != '')" file="$(arg hardware_launch)"/>
+  <node pkg="rci_action_manager" type="moveit_optimal_real" name="moveit_optimal_controller" output="screen">
+    <rosparam command="load" file="$(find rci_action_manager)/config/moveit_optimal.yaml"/>
+    <rosparam command="load" file="$(find rci_action_manager)/config/moveit_optimal_real.yaml"/>
+    <param if="$(arg mobile)" name="urdf" value="$(find summit_ur5e_moveit_config)/config/mobile_manipulator.urdf"/>
+    <param name="command_enabled" value="$(arg command_enabled)"/>
+  </node>
+</launch>

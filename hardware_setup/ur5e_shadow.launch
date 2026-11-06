@@ -1,0 +1,22 @@
+<launch>
+  <!-- Requires the existing calibrated observe bringup; never starts hardware.
+       No command-enable argument is exposed in this shadow-only entry point. -->
+  <arg name="urdf" default="$(dirname)/calibration/ur5e_calibrated.urdf"/>
+  <node pkg="rci_action_manager" type="ur_wrench_to_wrist.py" name="ur_wrench_to_wrist" output="screen"/>
+  <node pkg="rci_action_manager" type="moveit_optimal_real" name="moveit_optimal_controller" output="screen">
+    <rosparam command="load" file="$(find rci_action_manager)/config/moveit_optimal.yaml"/>
+    <rosparam command="load" file="$(find rci_action_manager)/config/moveit_optimal_real.yaml"/>
+    <param name="urdf" value="$(arg urdf)"/>
+    <rosparam param="joint_names">[shoulder_pan_joint, shoulder_lift_joint, elbow_joint, wrist_1_joint, wrist_2_joint, wrist_3_joint]</rosparam>
+    <param name="wrist_joint" value="wrist_3_joint"/>
+    <param name="joint_state_topic" value="/joint_states"/>
+    <param name="wrench_topic" value="/hqp_shadow/wrench"/>
+    <param name="wrench_frame" value="wrist_3_link"/>
+    <rosparam param="admittance/sensor_to_wrist_xyz">[0, 0, 0]</rosparam>
+    <rosparam param="admittance/sensor_to_wrist_rpy">[0, 0, 0]</rosparam>
+    <param name="admittance/wrench_sign" value="1.0"/>
+    <param name="trajectory_topic" value="/hqp_shadow/trajectory"/>
+    <param name="command_topic" value="/hqp_shadow/unused_command"/>
+    <param name="command_enabled" value="false"/>
+  </node>
+</launch>

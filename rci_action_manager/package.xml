@@ -2,7 +2,7 @@
 <package format="2">
   <name>rci_action_manager</name>
   <version>0.0.0</version>
-  <description>Controllers for CDPR</description>
+  <description>UR5e/mobile manipulator HQP action and topic trajectory controllers.</description>
 
   <maintainer email="leesai2000@khu.ac.kr">Leesai Park</maintainer>
 
@@ -14,13 +14,15 @@
   <depend>rci_holistic_controller</depend>
   <depend>sca_pkg</depend>
 
-  <depend>husky_description</depend>
-
-  <!-- <depend>cdpr</depend> -->
   <depend>roscpp</depend>
+  <depend>roslib</depend>
+  <depend>eiquadprog</depend>
   <depend>pluginlib</depend>
   <depend>geometry_msgs</depend>
   <depend>sensor_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>controller_manager_msgs</depend>
+  <depend>trajectory_msgs</depend>
   <depend>controller_interface</depend>
   <depend>std_msgs</depend>
   <depend>actionlib</depend>
@@ -29,6 +31,20 @@
   <depend>tf_conversions</depend>
   <depend>tf</depend>
 
-  <exec_depend>message_generation</exec_depend>
+  <build_depend>message_generation</build_depend>
+  <exec_depend>message_runtime</exec_depend>
+  <depend>std_srvs</depend>
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>mujoco_ros</exec_depend>
+  <exec_depend>summit_ur5e_moveit_config</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>python3-matplotlib</exec_depend>
+  <exec_depend>python3-scipy</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
+  <exec_depend>python3-rospkg</exec_depend>
+  <exec_depend>controller_manager</exec_depend>
+  <exec_depend>ur_robot_driver</exec_depend>
+  <exec_depend>ur_dashboard_msgs</exec_depend>
+  <exec_depend>moveit_commander</exec_depend>
 
 </package>

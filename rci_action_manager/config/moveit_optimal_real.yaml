@@ -1,0 +1,13 @@
+# Loaded after common config. Hardware driver is provided by the deployment team.
+command_enabled: false
+joint_state_topic: /brl_robot/ur5e/joint_states
+command_topic: /brl_robot/ur5e/ur5e_scaled_pos_joint_traj_controller/command
+wrench_topic: /brl_robot/ur5e/wrench
+wrench_frame: ur5e_wrist_3_link
+tracking_admittance: true
+limits:
+  velocity: [0.15, 0.15, 0.15, 0.2, 0.2, 0.2]
+  acceleration: [0.3, 0.3, 0.3, 0.4, 0.4, 0.4]
+admittance:
+  wrench_sign: 1.0
+  sensor_to_wrist_xyz: [0, 0, 0]

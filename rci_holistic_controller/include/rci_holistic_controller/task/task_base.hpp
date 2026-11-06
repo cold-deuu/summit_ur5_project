@@ -14,6 +14,8 @@
 
 // CHAN HQP CONTROLLER 
 #include <rci_holistic_controller/constraint/constraint_base.hpp>
+#include <rci_holistic_controller/constraint/constraint_equality.hpp>
+#include <rci_holistic_controller/constraint/constraint_inequality.hpp>
 #include <rci_holistic_controller/math/math.hpp>
 
 namespace chanhqp{
@@ -23,15 +25,18 @@ namespace chanhqp{
                 TaskBase(const std::string & name);
                 
                 // Reference
-                virtual const bool & getSE3Traj(pinocchio::SE3 trajSample) const = 0;
-                virtual const bool & getVectorTraj(Eigen::VectorXd trajSample) const = 0;
+                virtual bool getSE3Traj(pinocchio::SE3 trajSample) = 0;
+                virtual bool getVectorTraj(Eigen::VectorXd trajSample) = 0;
+     
+                virtual const std::string & name() const;
+                virtual const std::shared_ptr<chanhqp::constraint::ConstraintBase> constraint() const =0;
 
                 // Gain 
-                virtual const double Kp(double Kp) const;
-                virtual const double Kd(double Kd) const;
+                virtual void Kp(double Kp);
+                virtual void Kd(double Kd);
 
                 // Compute
-                virtual chanhqp::constraint::ConstraintBase & compute(State state) = 0;
+                virtual std::shared_ptr<chanhqp::constraint::ConstraintBase> compute(State state) = 0;
 
                 // // Control
                 // virtual bool isPositionControl() const = 0;
@@ -42,9 +47,9 @@ namespace chanhqp{
                 std::string name_;
                 double Kp_, Kd_;
 
-            }
-    }
-}
+            };
+    };
+};
 
 
 #endif

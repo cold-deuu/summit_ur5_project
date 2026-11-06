@@ -17,30 +17,36 @@ using namespace Eigen;
 using namespace pinocchio;
 using namespace std;
 
-typedef struct Pub_state {   
-    Eigen::VectorXd tension;
-    Eigen::VectorXd arm_torque;
-} pub_state;   
+
+typedef struct Reference {   
+    Eigen::VectorXd mobile_vel;
+    Eigen::VectorXd manip_pos;
+} reference;   
 
 typedef struct State{
+    // Joint
+    Eigen::VectorXd q;
+    Eigen::VectorXd v;
+
+    // Kinematics and Dynamics
     Eigen::MatrixXd J;
     Eigen::MatrixXd mass;
     Eigen::VectorXd gravity;
     Eigen::VectorXd eef_vel;
     SE3 oMi;
     int n_var;
+    int n_mobile;
+    int n_manip;
+
+    // SCA
+    std::map<std::string, double> sca_gamma;
+    std::map<std::string, Eigen::MatrixXd> sca_dgamma_dq;
+
+    // Desired
+    Eigen::VectorXd qdes;
+
 }state;
 
-typedef struct Constraint{
-    Eigen::MatrixXd eq_a;
-    Eigen::VectorXd eq_b;
-
-    Eigen::MatrixXd ineq_a;
-    Eigen::VectorXd ineq_b;
-
-    Eigen::MatrixXd Q;
-    Eigen::VectorXd C;
-}constraint;
 
 typedef struct Plot_state{
     Eigen::VectorXd se3_pose;

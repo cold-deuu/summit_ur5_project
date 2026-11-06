@@ -3,6 +3,8 @@
 
 #include <rci_holistic_controller/constraint/constraint_base.hpp>
 
+
+
 namespace chanhqp{
     namespace constraint{
         class ConstraintEquality : public ConstraintBase

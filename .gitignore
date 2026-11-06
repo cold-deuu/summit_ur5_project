@@ -18,3 +18,24 @@ dist/
 
 # Undo-tree save-files
 *.~undo-tree
+
+# Catkin outputs / runtime captures / local downloads
+/build/
+/devel/
+/install/
+/logs/
+/Testing/
+/artifacts/
+/hardware_setup/downloads/
+/hardware_setup/*_result.json
+/hardware_setup/*diagnostics.json
+/hardware_setup/action_fault_snapshot.json
+__pycache__/
+*.py[cod]
+*.bag
+*.bag.active
+*.zip
+.env
+.env.*
+*.pem
+*.key

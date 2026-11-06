@@ -1,0 +1,15 @@
+<launch>
+  <!-- First connection only: state controllers run, motion controllers stay stopped.
+       Do not launch a second driver when the robot PC already owns this arm. -->
+  <arg name="robot_ip"/>
+  <arg name="reverse_ip"/>
+  <arg name="kinematics_config" default="$(find ur_description)/config/ur5e/default_kinematics.yaml"/>
+  <include file="$(find ur_robot_driver)/launch/ur5e_bringup.launch">
+    <arg name="robot_ip" value="$(arg robot_ip)"/>
+    <arg name="reverse_ip" value="$(arg reverse_ip)"/>
+    <arg name="kinematics_config" value="$(arg kinematics_config)"/>
+    <arg name="headless_mode" value="false"/>
+    <arg name="controllers" value="joint_state_controller speed_scaling_state_controller force_torque_sensor_controller"/>
+    <arg name="stopped_controllers" value="scaled_pos_joint_traj_controller pos_joint_traj_controller joint_group_vel_controller"/>
+  </include>
+</launch>

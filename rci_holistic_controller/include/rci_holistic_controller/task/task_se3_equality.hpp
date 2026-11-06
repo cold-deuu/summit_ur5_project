@@ -2,25 +2,31 @@
 #define __task_se3_equality_hpp__
 
 #include <rci_holistic_controller/task/task_base.hpp>
-#include <rci_holistic_controller/constraint/constraint_equality.hpp>
 
 namespace chanhqp{
     namespace task{
         class TaskSE3Equality : public TaskBase
         {
             public:
-                TaskSE3Equality(const std::string & name);
+                TaskSE3Equality(const std::string & name, bool is_admittance);
                 
-                const bool & getSE3Traj(pinocchio::SE3 trajSample) const;
-                const bool & getVectorTraj(Eigen::VectorXd ) const;
+                bool getSE3Traj(pinocchio::SE3 trajSample);
+                bool getVectorTraj(Eigen::VectorXd );
 
-                chanhqp::constraint::ConstraintBase & compute(State state);
-
+                // chanhqp::constraint::ConstraintBase & compute(State state);
+                std::shared_ptr<chanhqp::constraint::ConstraintBase> compute(State state);
+                const std::shared_ptr<chanhqp::constraint::ConstraintBase> constraint() const;
+            
+                // Control with Admittance
+                void setAdmittance(Eigen::VectorXd admittance) {task_space_admittance_ = admittance;};
             protected:
-                chanhqp::constraint::ConstraintEquality constraint_;
+                std::shared_ptr<chanhqp::constraint::ConstraintEquality> constraint_;
+                // chanhqp::constraint::ConstraintEquality constraint_;
                 pinocchio::SE3 ref_se3_;
-        }
-    }
-}
+                Eigen::VectorXd task_space_admittance_;
+                bool is_admittance_;
+        };
+    };
+};
 
 #endif

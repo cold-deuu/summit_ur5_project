@@ -18,6 +18,14 @@ class ActionServerBase
 
     std::string action_name_;
     ros::Time start_time_;
+    ros::Time trajectory_time_, last_compute_;
+    uint64_t generation_=0;
+    ros::Time controlTime(ros::Time now) {
+      const double dt=std::max(0.0,std::min(.1,(now-last_compute_).toSec()));
+      trajectory_time_+=ros::Duration(dt*mu_->speed_scaling());
+      last_compute_=now;
+      return trajectory_time_;
+    }
     ros::NodeHandle & nh_; 
     bool control_running_ {false}; 
     bool mode_change_ {false};

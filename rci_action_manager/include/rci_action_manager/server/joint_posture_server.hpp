@@ -2,6 +2,7 @@
 
 #include <rci_action_manager/server/action_server_base.hpp>
 #include <rci_action_manager/JointPostureAction.h>
+// #include <rci_action_manager/MoveitAction.h>
 #include "tf/transform_datatypes.h"
 
 #include <fstream>
@@ -23,6 +24,8 @@ class JointPostureActionServer : public ActionServerBase
 public:
   JointPostureActionServer(std::string name, ros::NodeHandle &nh, std::shared_ptr<RobotController::SummitUR5Wrapper>  &mu);
   ros::Duration dur_;
+  double goal_tolerance_=.015;
+  std::string abort_reason_;
 
   bool compute(ros::Time time) override;
   void signalAbort(bool is_aborted) override;

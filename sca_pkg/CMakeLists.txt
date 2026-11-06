@@ -115,8 +115,7 @@ include_directories(
   ${EIGEN3_INCLUDE_DIRS}
 )
 
-include_directories(/home/chan/local/include)
-link_directories(/home/chan/local/lib)
+# Resolve dependencies from find_package / CMAKE_PREFIX_PATH, not a user's home.
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}

@@ -55,7 +55,7 @@
     <mesh file="wrist2_1.obj"/>
     <mesh file="wrist2_2.obj"/>
     <mesh file="wrist3.obj"/>
-    <mesh name="summit_xls_chassis" file="summit_xl_assembled.obj"/>
+    <mesh name="summit_xls_chassis" file="summit_xl_assembled_decim.obj"/>
 
   </asset>
 
@@ -80,29 +80,29 @@
       <inertial pos="0 0 0" quat="0.707107 0 0 0.707107" mass="50.455" fullinertia="0.6022 1.7386 2.0296 -0.02364 -0.1197 -0.001544"/-->
       <geom pos="0 0 0.127" type="mesh" rgba="0.82 0.82 0.82 1" mesh="summit_xls_chassis"/>
 
-      <joint name="base_x_slide_joint" type="slide" pos="0 0 0" axis="1 0 0"  damping="300" frictionloss = "5"/>
-      <joint name="base_y_slide_joint" type="slide" pos="0 0 0" axis="0 1 0"  damping="300" frictionloss = "5"/>
-      <joint name="base_z_hinge_joint" type="hinge" pos="0 0 0" axis="0 0 1"  damping="300" frictionloss = "5"/>
+      <joint name="base_x_slide_joint" type="slide" pos="0 0 0" axis="1 0 0"  damping="100" frictionloss = "5"/>
+      <joint name="base_y_slide_joint" type="slide" pos="0 0 0" axis="0 1 0"  damping="100" frictionloss = "5"/>
+      <joint name="base_z_hinge_joint" type="hinge" pos="0 0 0" axis="0 0 1"  damping="100" frictionloss = "5"/>
 
     <body name="summit_xl_front_right_wheel_link" pos="0.2225 -0.2045 0.127">
       <inertial pos="0 0 0" quat="0.707107 0 0 0.707107" mass="6.5" diaginertia="0.0524193 0.0303095 0.0303095"/>
       <!--joint name="summit_xl_front_right_wheel_joint" pos="0 0 0" axis="0 1 0"/-->
-      <geom size="0.127 0.0435" quat="0.707107 0.707107 0 0" type="cylinder" rgba="0.2 0.2 0.2 1"/>
+      <!-- <geom size="0.127 0.0435" quat="0.707107 0.707107 0 0" type="cylinder" rgba="0.2 0.2 0.2 1"/> -->
     </body>
     <body name="summit_xl_front_left_wheel_link" pos="0.2225 0.2045 0.127">
       <inertial pos="0 0 0" quat="0.707107 0 0 0.707107" mass="6.5" diaginertia="0.0524193 0.0303095 0.0303095"/>
       <!--joint name="summit_xl_front_left_wheel_joint" pos="0 0 0" axis="0 1 0"/-->
-      <geom size="0.127 0.0435" quat="0.707107 0.707107 0 0" type="cylinder" rgba="0.2 0.2 0.2 1"/>
+      <!-- <geom size="0.127 0.0435" quat="0.707107 0.707107 0 0" type="cylinder" rgba="0.2 0.2 0.2 1"/> -->
     </body>
     <body name="summit_xl_back_left_wheel_link" pos="-0.2225 0.2045 0.127">
       <inertial pos="0 0 0" quat="0.707107 0 0 0.707107" mass="6.5" diaginertia="0.0524193 0.0303095 0.0303095"/>
       <!--joint name="summit_xl_back_left_wheel_joint" pos="0 0 0" axis="0 1 0"/-->
-      <geom size="0.127 0.0435" quat="0.707107 0.707107 0 0" type="cylinder" rgba="0.2 0.2 0.2 1"/>
+      <!-- <geom size="0.127 0.0435" quat="0.707107 0.707107 0 0" type="cylinder" rgba="0.2 0.2 0.2 1"/> -->
     </body>
     <body name="summit_xl_back_right_wheel_link" pos="-0.2225 -0.2045 0.127">
       <inertial pos="0 0 0" quat="0.707107 0 0 0.707107" mass="6.5" diaginertia="0.0524193 0.0303095 0.0303095"/>
       <!-- joint name="summit_xl_back_right_wheel_joint" pos="0 0 0" axis="0 1 0"/ -->
-      <geom size="0.127 0.0435" quat="0.707107 0.707107 0 0" type="cylinder" rgba="0.2 0.2 0.2 1"/>
+      <!-- <geom size="0.127 0.0435" quat="0.707107 0.707107 0 0" type="cylinder" rgba="0.2 0.2 0.2 1"/> -->
     </body>
 
       <light name="spotlight" mode="targetbodycom" target="wrist_2_link" pos="0 -1 2"/>
@@ -191,9 +191,9 @@
   <position name="base_y_slide_joint" joint="base_y_slide_joint" ctrlrange="-10000.0 10000.0" kp="100000"/>
   <position name="base_z_hinge_joint" joint="base_z_hinge_joint" ctrlrange="-10000.0 10000.0" kp="100000"/> -->
 
-  <velocity name="base_x_slide_joint" joint="base_x_slide_joint" ctrlrange="-5.0 5.0" kv="50000"/>
-  <velocity name="base_y_slide_joint" joint="base_y_slide_joint" ctrlrange="-5.0 5.0" kv="50000"/>
-  <velocity name="base_z_hinge_joint" joint="base_z_hinge_joint" ctrlrange="-5.0 5.0" kv="50000"/>
+  <velocity name="base_x_slide_joint" joint="base_x_slide_joint" ctrlrange="-5.0 5.0" kv="100000"/>
+  <velocity name="base_y_slide_joint" joint="base_y_slide_joint" ctrlrange="-5.0 5.0" kv="100000"/>
+  <velocity name="base_z_hinge_joint" joint="base_z_hinge_joint" ctrlrange="-5.0 5.0" kv="100000"/>
 
 
   <position name="shoulder_pan" joint="shoulder_pan_joint" ctrlrange="-6.28 6.28" kp="500000"/>

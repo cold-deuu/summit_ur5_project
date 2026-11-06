@@ -1,0 +1,5 @@
+<launch>
+  <!-- Load only. Does NOT activate/switch a controller or publish any command. -->
+  <rosparam command="load" file="$(find rci_action_manager)/config/ur5e_direct_position.yaml"/>
+  <node pkg="controller_manager" type="spawner" name="hqp_position_stopped_spawner" args="--stopped hqp_joint_position_controller" output="screen"/>
+</launch>
