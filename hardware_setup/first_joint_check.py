@@ -10,18 +10,18 @@ from sensor_msgs.msg import JointState
 NAMES=['shoulder_pan_joint','shoulder_lift_joint','elbow_joint',
        'wrist_1_joint','wrist_2_joint','wrist_3_joint']
 
-def ordered_state(msg,now):
+def ordered_state(msg,now,names=NAMES,require_stationary=True):
     if len(msg.position)!=len(msg.name) or len(msg.velocity)!=len(msg.name):
         raise ValueError('Incomplete joint state')
     if not -.05<=now-msg.header.stamp.to_sec()<=.25:
         raise ValueError('Stale/future joint state')
     q=[]
-    for name in NAMES:
+    for name in names:
         if msg.name.count(name)!=1:raise ValueError('Missing/duplicate joint '+name)
         i=msg.name.index(name)
         if not math.isfinite(msg.position[i]) or not math.isfinite(msg.velocity[i]):
             raise ValueError('Nonfinite joint state')
-        if abs(msg.velocity[i])>.02:raise ValueError('Robot is moving')
+        if require_stationary and abs(msg.velocity[i])>.02:raise ValueError('Robot is moving')
         q.append(msg.position[i])
     return q
 

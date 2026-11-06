@@ -3,7 +3,11 @@
        Starts no driver, motion-controller switch, planner or action goal. -->
   <arg name="arm_namespace" default="/brl_robot/ur5e"/>
   <arg name="command_enabled" default="true"/>
-  <arg name="admittance_enabled" default="false"/>
+  <!-- Admittance is active in HOLDING, JointPosture and SE3. -->
+  <arg name="admittance_enabled" default="true"/>
+  <arg name="admittance_mode" default="hold"/>
+  <arg name="gravity_compensation" default="false"/>
+  <arg name="gravity_model_file" default=""/>
   <arg name="arm_velocity_limit" default="1.57"/>
   <arg name="joint_kp" default="50.0"/>
   <arg name="se3_kp" default="50.0"/>
@@ -32,14 +36,25 @@
     <remap from="/wrench" to="$(arg arm_namespace)/wrench"/>
     <remap from="/hqp_shadow/wrench" to="/hqp_field/wrench"/>
   </node>
+  <include if="$(arg gravity_compensation)" file="$(dirname)/ft_gravity_compensation.launch">
+    <arg name="model_file" value="$(arg gravity_model_file)"/>
+    <arg name="input_topic" value="/hqp_field/wrench"/>
+    <arg name="output_topic" value="/hqp_field/wrench_compensated"/>
+  </include>
   <node pkg="rci_action_manager" type="rci_action_manager_real" name="real_action_controller" output="screen">
     <rosparam command="load" file="$(find rci_action_manager)/config/ur5e_field_action.yaml"/>
+    <param name="admittance_mode" value="$(arg admittance_mode)"/>
+    <!-- Select free hold without changing the shared spring configuration. -->
+    <rosparam if="$(eval {'spring': False, 'hold': True}[arg('admittance_mode')])"
+              param="admittance/stiffness">[0, 0, 0, 0, 0, 0]</rosparam>
     <param name="model_file" value="$(arg model_file)"/>
     <param name="wrist_joint" value="ur5e_wrist_3_joint"/>
     <param name="telemetry_frame" value="ur5e_base_link"/>
     <param name="joint_state_topic" value="$(arg arm_namespace)/joint_states"/>
     <param name="stamped_ft" value="true"/>
-    <param name="ft_topic" value="/hqp_field/wrench"/>
+    <param name="ft_topic" value="$(eval '/hqp_field/wrench_compensated' if arg('gravity_compensation') else '/hqp_field/wrench')"/>
+    <param name="gravity_compensation/enabled" value="$(arg gravity_compensation)"/>
+    <param name="gravity_compensation/model_file" value="$(arg gravity_model_file)"/>
     <param name="wrench_frame" value="ur5e_wrist_3_link"/>
     <param name="ft_bias_samples" value="100"/>
     <param name="state_timeout" value="0.25"/>

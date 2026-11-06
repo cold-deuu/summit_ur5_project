@@ -1,4 +1,5 @@
 #include "rci_action_manager/controller/controller.hpp"
+#include <limits>
 
 using namespace Eigen;
 using namespace pinocchio;
@@ -97,7 +98,7 @@ namespace RobotController
         action_admittance_.parameters.mass = M_adm_.diagonal();
         action_admittance_.parameters.damping = D_adm_.diagonal();
         action_admittance_.parameters.stiffness = K_adm_.diagonal();
-        // Optional finite real-robot settings; legacy defaults remain compatible.
+        // Read the same optional limit switches as the MoveIt topic controller.
         auto read_six=[&](const std::string &name, Eigen::Matrix<double,6,1> &values,bool nonnegative=false) {
             std::vector<double> raw;
             if (!params.getParam("admittance/"+name,raw)) return;
@@ -120,6 +121,15 @@ namespace RobotController
         params.param("admittance/joint_velocity_limit",admittance_joint_velocity_,arm_velocity_limit);
         params.param("admittance/joint_acceleration_limit",admittance_joint_acceleration_,1e9);
         params.param("admittance/idle_reference_lag",idle_reference_lag_,1e9);
+        bool displacement_limits_enabled=true, acceleration_limits_enabled=true;
+        params.param("admittance/displacement_limits_enabled",displacement_limits_enabled,true);
+        params.param("admittance/acceleration_limits_enabled",acceleration_limits_enabled,true);
+        if (!displacement_limits_enabled)
+            settings.displacement_limit.setConstant(std::numeric_limits<double>::infinity());
+        if (!acceleration_limits_enabled) {
+            settings.acceleration_limit.setConstant(std::numeric_limits<double>::infinity());
+            admittance_joint_acceleration_=std::numeric_limits<double>::infinity();
+        }
         if (!std::isfinite(settings.cutoff_hz) || settings.cutoff_hz<0 ||
             !(settings.linear_velocity_norm_limit>0) || !(settings.angular_velocity_norm_limit>0) ||
             !(admittance_joint_velocity_>0) || !(admittance_joint_acceleration_>0) || !(idle_reference_lag_>0))

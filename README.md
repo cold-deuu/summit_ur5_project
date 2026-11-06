@@ -85,13 +85,12 @@ roslaunch summit_ur5_hardware_setup ur5e_actions_field.launch command_enabled:=f
 rostopic echo -n 1 /real_action_controller/status
 ```
 
-`HOLDING`, 빈 `reason`, 올바른 actual 관절값을 확인한다. 기본 admittance는 OFF다. 이 경우 F/T bias는 백그라운드에서 수집하지만 nominal 추종의 필수 입력은 아니다. **Admittance ON에서는 bias와 F/T 신선도가 필수다.**
+`HOLDING`, 빈 `reason`, 올바른 actual 관절값을 확인한다. 기본 admittance는 ON이며 대기·JointPosture·SE3 모두에 적용된다. **Bias 수집 완료와 신선한 F/T가 제어 준비 조건이다.** 진단을 위해 `admittance_enabled:=false`로 실행하면 F/T 수집은 계속하지만 제어 준비 조건에서는 제외한다.
 
 준비가 끝나면 OFF 서버를 종료하고 사용자가 실행:
 
 ```bash
-roslaunch summit_ur5_hardware_setup ur5e_actions_field.launch \
-  command_enabled:=true admittance_enabled:=false
+roslaunch summit_ur5_hardware_setup ur5e_actions_field.launch command_enabled:=true
 
 # 다른 터미널: 현재 자세에서 pan +1도 / 5초, 자동 복귀 없음
 rosrun summit_ur5_hardware_setup field_action_joint_check.py
@@ -120,7 +119,7 @@ rosrun rci_action_manager mm_client.py
 - 출력은 **100 Hz**, stamp 0, **positions만 있는 점 1개**, 기본 horizon **0.02초**다.
 - 관절은 `ur5e_` 접두사 6축이며 이름으로 매핑한다. startup에서 기존 scaled JTC의 종류/running/관절명을 조회한다.
 - 팔만 제어하며 모바일은 고정한다. SE3 제어점은 `ur5e_wrist_3_joint`다. MoveIt의 `graps_link`와 구분한다.
-- 기본 Kp50, arm speed cap1.57rad/s, SE3 Kp50/Kd1, admittance OFF다. 초기 상한은 `arm_velocity_limit:=0.3`으로 낮출 수 있다.
+- 기본 Kp50, arm speed cap1.57rad/s, SE3 Kp50/Kd1, admittance ON이다. 초기 상한은 `arm_velocity_limit:=0.3`으로 낮출 수 있다.
 - speed scaling publisher가 없으면 **읽기 전용** SpeedScalingStateController를 시작한다. 이미 있다면 `start_speed_scaling_controller:=false`로 둔다.
 - 다른 MoveIt Execute/action과 동일 팔을 동시에 제어하지 않는다.
 
@@ -134,7 +133,7 @@ roslaunch summit_ur5_hardware_setup ur5e_actions_real.launch
 roslaunch summit_ur5_hardware_setup ur5e_moveit_real.launch
 ```
 
-MoveIt 토픽 노드에는 `move_group`이 필요 없다. 다른 팀이 아래 토픽으로 계획을 보내면 검증 후 실행한다. **현장 MoveIt 노드 연결은 별도 추가 검증 대상**이며 위 launch는 연구실 모델/namespace용이다.
+MoveIt 토픽 노드에는 `move_group`이 필요 없다. 다른 팀이 아래 토픽으로 계획을 보내면 검증 후 실행한다. 위 launch는 연구실 모델/namespace용이다. **BRL 현장에서는 `ur5e_moveit_field.launch`와 `ur5e_moveit_planning_field.launch`를 사용한다.** 현장 모델·토픽·기존 scaled JTC에 맞춘 연결과 RViz 전송 명령은 [하드웨어 안내의 BRL MoveIt](hardware_setup/README.md#brl-moveit)에 있다. 현장 실기 추종 검증은 별도다.
 
 | 항목 | 명세 |
 |---|---|
@@ -162,7 +161,7 @@ rosrun summit_ur5_hardware_setup send_rviz_moveit_plan.py
 
 ## Admittance 설정과 남은 문제
 
-공통 CartesianAdmittance를 재사용한다. **연구실 MoveIt은 TRACKING OFF/HOLD spring ON, 현장 action 기본은 전체OFF**다.
+공통 CartesianAdmittance를 재사용한다. **연구실 MoveIt은 TRACKING OFF/HOLD spring ON, BRL MoveIt은 hold 모드·TRACKING ON, 현장 action은 대기·JointPosture·SE3 모두 기본 ON**이다.
 
 | 연구실 native HOLD 설정 | 현재 값 |
 |---|---|
@@ -174,7 +173,7 @@ rosrun summit_ur5_hardware_setup send_rviz_moveit_plan.py
 | admittance 관절 속도 | 0.15rad/s |
 | native 변위·admittance 가속도 clip | OFF |
 
-현장 action은 별도 `ur5e_field_action.yaml`에서 **유한한 변위/가속도 한계**를 유지한다. 연구실에서 해제한 제한이 현장까지 자동 적용되는 구조가 아니다.
+BRL action/MoveIt의 `ur5e_field_action.yaml`은 `displacement_limits_enabled: false`, `acceleration_limits_enabled: false`를 사용한다. Cartesian 최대 변위·가속도와 admittance 관절 가속도 제한을 해제하며, 위 표의 Cartesian/관절 속도 제한과 기존 HOLD reference-lag 제한은 유지한다. BRL action damping은 병진75/회전5이며, MoveIt은 마지막에 로드하는 `ur5e_field_moveit.yaml`에서50/3으로 덮어쓴다. 현장 action과 BRL MoveIt의 기본 모드는 hold(K=0)이며 `admittance_mode:=spring`으로 복원 스프링을 선택할 수 있다. 위 연구실 native 표와 BRL 설정 파일은 별도다.
 
 연구실에서는 무접촉 자세에도 bias 보정 후 수 N의 잔류 힘이 관측됐다. startup 상수 bias는 자세 의존 오차를 없애지 못한다. 접촉 힘을 지울 수 있는 자동 HOLD 재영점은 구현하지 않았다. spring도 잔류 힘을 제거하지 않으며 `F/K`만큼 편위될 수 있다.
 

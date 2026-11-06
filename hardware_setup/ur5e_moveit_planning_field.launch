@@ -1,0 +1,26 @@
+<launch>
+  <!-- Reuse BRL's live full-robot URDF, TF and joint states. Use live SRDF when
+       present, otherwise validate the bundled field SRDF against the live URDF.
+       Planning only: execution goes through the HQP topic controller. -->
+  <arg name="robot_namespace" default="/brl_robot"/>
+  <arg name="rviz" default="true"/>
+  <arg name="fallback_srdf" default="$(dirname)/field/ur5e_moveit.srdf"/>
+  <arg name="ccd_preload" default="$(optenv MOVEIT_CCD_PRELOAD)"/>
+  <group ns="$(arg robot_namespace)">
+    <param name="robot_description_semantic"
+           command="$(find summit_ur5_hardware_setup)/prepare_field_moveit_semantics.py --robot-namespace $(arg robot_namespace) --fallback-srdf &quot;$(arg fallback_srdf)&quot;"/>
+    <rosparam command="load" file="$(find summit_ur5e_moveit_config)/config/kinematics.yaml" ns="robot_description_kinematics"/>
+    <rosparam command="load" file="$(find summit_ur5e_moveit_config)/config/joint_limits.yaml" ns="robot_description_planning"/>
+    <node pkg="moveit_ros_move_group" type="move_group" name="move_group" output="screen">
+      <env name="LD_PRELOAD" value="$(arg ccd_preload)"/>
+      <rosparam command="load" file="$(find summit_ur5e_moveit_config)/config/ompl_planning.yaml"/>
+      <param name="allow_trajectory_execution" value="false"/>
+      <param name="planning_scene_monitor/publish_planning_scene" value="true"/>
+      <param name="planning_scene_monitor/publish_geometry_updates" value="true"/>
+      <param name="planning_scene_monitor/publish_state_updates" value="true"/>
+      <remap from="joint_states" to="$(arg robot_namespace)/joint_states"/>
+    </node>
+    <node if="$(arg rviz)" pkg="rviz" type="rviz" name="moveit_rviz"
+          args="-d $(find summit_ur5e_moveit_config)/config/moveit.rviz"/>
+  </group>
+</launch>

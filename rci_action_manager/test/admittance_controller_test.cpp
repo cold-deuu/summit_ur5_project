@@ -158,6 +158,68 @@ void check_smooth_admittance(bool whole_body)
         "joint_acceleration_limit","idle_reference_lag"}) params.deleteParam("admittance/"+key);
 }
 
+void check_moveit_admittance_limits(bool whole_body, const std::string &mode)
+{
+    ros::NodeHandle params("~");
+    params.setParam("admittance_enabled",true);
+    params.setParam("admittance/displacement_limits_enabled",false);
+    params.setParam("admittance/acceleration_limits_enabled",false);
+    // Tiny finite bounds expose any Cartesian or joint slew limit left active.
+    params.setParam("admittance/displacement_limit",std::vector<double>(6,1e-6));
+    params.setParam("admittance/acceleration_limit",std::vector<double>(6,1e-6));
+    params.setParam("admittance/joint_acceleration_limit",1e-6);
+    params.setParam("admittance/velocity_limit",std::vector<double>{.06,.06,.06,.08,.08,.08});
+    params.setParam("admittance/linear_velocity_norm_limit",.08);
+    params.setParam("admittance/angular_velocity_norm_limit",.1);
+    params.setParam("admittance/joint_velocity_limit",.15);
+    params.setParam("admittance/idle_reference_lag",.005);
+    const std::string package=ros::package::getPath("summit_xl_description");
+    auto robot=std::make_shared<holistic_controller::robot::RobotWrapper>(
+        package+(whole_body?"/summit_ur_wholebody_control.urdf":"/summit_ur_manip_control.urdf"),
+        std::vector<std::string>{package});
+    RobotController::SummitUR5Wrapper controller(robot,whole_body);controller.initialize();
+    Eigen::VectorXd q=Eigen::VectorXd::Zero(robot->nq());
+    q.tail(6)<<.01,-1.47,1.0,-1.57,-.7,.002;
+    const Eigen::VectorXd zero=Eigen::VectorXd::Zero(robot->nv());
+    controller.update_joint(q,zero);
+    if (mode=="JOINT_POSTURE") controller.initJointPosture(q.tail(6),ros::Duration(2));
+    else if (mode=="SE3") controller.initControl(pinocchio::SE3::Identity(),ros::Duration(2),true);
+    Eigen::VectorXd wrench=Eigen::VectorXd::Zero(6);
+    wrench(2)=-200; wrench(5)=-10;
+    const ros::Time start=ros::Time::now();
+    for(int i=0;i<40;++i) {
+        controller.update_joint(q,zero);controller.update_ft(wrench);
+        if (mode=="HOLDING") controller.update_admittance_control();
+        else if (mode=="JOINT_POSTURE") controller.jointPosture(start+ros::Duration(.01*i));
+        else controller.Control(start+ros::Duration(.01*i));
+        rci_action_manager::ControlTelemetry t;
+        require(controller.telemetry(t),"Missing unlimited admittance telemetry");
+        Eigen::Vector3d linear,angular,displacement;
+        for(int axis=0;axis<3;++axis) {
+            linear(axis)=t.admittance_velocity[axis];
+            angular(axis)=t.admittance_velocity[axis+3];
+            displacement(axis)=t.admittance_displacement[axis];
+        }
+        require(linear.norm()>.03,"Admittance acceleration clipping was not disabled");
+        require(displacement.norm()>1e-4,"Admittance displacement clipping was not disabled");
+        require(linear.norm()<=.080001 && linear.cwiseAbs().maxCoeff()<=.060001,
+                "Disabling acceleration/displacement limits removed linear speed limits");
+        require(angular.norm()<=.100001 && angular.cwiseAbs().maxCoeff()<=.080001,
+                "Disabling acceleration/displacement limits removed angular speed limits");
+        const auto command=controller.get_result();
+        require(command.manip_pos.allFinite(),"Unlimited admittance produced nonfinite command");
+        const double step=(command.manip_pos-q.tail(6)).cwiseAbs().maxCoeff();
+        require(step>1e-5,"Admittance joint acceleration clipping was not disabled");
+        require(step<=.030001,"Unlimited admittance bypassed arm velocity limits");
+    }
+    for(const std::string &key:{"displacement_limits_enabled","acceleration_limits_enabled",
+        "displacement_limit","acceleration_limit","joint_acceleration_limit","velocity_limit",
+        "linear_velocity_norm_limit","angular_velocity_norm_limit","joint_velocity_limit",
+        "idle_reference_lag"}) params.deleteParam("admittance/"+key);
+    params.deleteParam("admittance_enabled");
+    std::cout<<"moveit_admittance_limits whole_body="<<whole_body<<" mode="<<mode<<" passed"<<std::endl;
+}
+
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "admittance_controller_test", ros::init_options::AnonymousName);
@@ -169,5 +231,8 @@ int main(int argc, char **argv)
     check_se3_lag_bound(true);
     check_smooth_admittance(false);
     check_smooth_admittance(true);
+    for(bool whole_body:{false,true})
+        for(const std::string &mode:{"HOLDING","JOINT_POSTURE","SE3"})
+            check_moveit_admittance_limits(whole_body,mode);
     return 0;
 }
