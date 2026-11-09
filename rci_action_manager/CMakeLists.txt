@@ -7,6 +7,7 @@ find_package(Boost REQUIRED COMPONENTS system)
 find_package(pinocchio REQUIRED)
 find_package(eiquadprog REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(toppra REQUIRED)
 find_package(rci_holistic_controller REQUIRED)
 find_package(sca_pkg REQUIRED)
 
@@ -166,9 +167,10 @@ endif()
 
 add_library(moveit_optimal_common
   src/controller/moveit_optimal_controller.cpp
-  src/controller/moveit_topic_node.cpp)
+  src/controller/moveit_topic_node.cpp
+  src/controller/path_retiming.cpp)
 set_target_properties(moveit_optimal_common PROPERTIES CXX_STANDARD 17)
-target_link_libraries(moveit_optimal_common ${PROJECT_NAME} ${catkin_LIBRARIES})
+target_link_libraries(moveit_optimal_common ${PROJECT_NAME} toppra::toppra ${catkin_LIBRARIES})
 add_dependencies(moveit_optimal_common ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_executable(moveit_optimal_sim src/simulation/sim_moveit.cpp)
 add_executable(moveit_optimal_real src/real/real_moveit.cpp)

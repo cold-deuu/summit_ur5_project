@@ -72,6 +72,7 @@ struct Plan {
     Sample first,last;
     double start_time=0,duration=0;
     double parameter_scale=1;
+    bool timed=false; // TOPP-RA retimed: elapsed time is the path parameter.
     uint64_t id=0;
     Sample sample(double elapsed) const;
     bool buildPath();
@@ -100,6 +101,9 @@ public:
     double advance(double target,double dt,double bandwidth);
 };
 pinocchio::Model armModel(const pinocchio::Model&,const std::array<std::string,6>&);
+struct Parameters;
+// Non-RT: replace plan segments with a C2 TOPP-RA time parameterization.
+bool retimePlan(Plan &plan,const Parameters &p,std::string &error);
 struct Parameters {
     std::string urdf;
     std::string wrist_joint="ur5e_wrist_3_joint";
@@ -116,6 +120,11 @@ struct Parameters {
     double path_lookahead=.03,path_search_window=.12,path_stall_timeout=15;
     double path_speed=.5,path_acceleration=2,path_jerk=10;
     double path_clock_bandwidth=10;
+    // Non-RT TOPP-RA retiming of geometric paths; falls back to the governor on failure.
+    bool path_retiming=false;
+    double retiming_velocity_scale=.9,retiming_acceleration_scale=.9,retiming_jerk_scale=.8,retiming_sample_period=.02;
+    // Joint jerk bound for the retimed reference (scaled by retiming_jerk_scale).
+    Vec jerk=Vec::Constant(10);
     size_t max_points=5000;
     bool require_driver_ready=false,limit_joint_admittance=false,latch_faults=false;
     double admittance_joint_velocity=.15,admittance_joint_acceleration=.4,holding_reference_lag=.005;
@@ -155,7 +164,7 @@ private:
     bool started_=false;
     double start_=0,dt_,error_sum_=0,plan_elapsed_=0,last_step_wall_=0;
     double path_progress_=0,path_last_progress_=0,path_progress_stamp_=0;
-    double path_handover_elapsed_=0;
+    double path_handover_elapsed_=0,path_time_=0;
     PathProgressGovernor path_reference_;
     PathClock path_clock_;
     bool path_cruise_started_=false;

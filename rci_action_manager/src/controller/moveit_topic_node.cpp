@@ -40,6 +40,7 @@ Parameters TopicNode::loadParameters() {
     PARAM(geometric_tracking);PARAM(path_lookahead);PARAM(path_search_window);PARAM(path_stall_timeout);
     PARAM(path_speed);PARAM(path_acceleration);PARAM(path_jerk);
     PARAM(path_clock_bandwidth);
+    PARAM(path_retiming);PARAM(retiming_velocity_scale);PARAM(retiming_acceleration_scale);PARAM(retiming_jerk_scale);PARAM(retiming_sample_period);
     PARAM(acceleration_limits);
 #undef PARAM
     int max_points=5000; private_nh.param("max_points",max_points,max_points); p.max_points=max_points;
@@ -52,6 +53,7 @@ Parameters TopicNode::loadParameters() {
     p.lower=model.lowerPositionLimit; p.upper=model.upperPositionLimit;
     p.velocity=vectorParam(private_nh,"limits/velocity",Vec::Constant(.4),true).cwiseMin(model.velocityLimit);
     p.acceleration=vectorParam(private_nh,"limits/acceleration",Vec::Constant(.8),true);
+    p.jerk=vectorParam(private_nh,"limits/jerk",p.jerk,true);
     p.effort=vectorParam(private_nh,"limits/effort",Vec(model.effortLimit),true).cwiseMin(model.effortLimit);
     p.admittance.mass=vectorParam(private_nh,"admittance/mass",Vec::Constant(3),true);
     p.admittance.damping=vectorParam(private_nh,"admittance/damping",Vec::Constant(35),true);
@@ -106,7 +108,11 @@ Parameters TopicNode::loadParameters() {
         !std::isfinite(p.path_speed) || !(p.path_speed>0) ||
         !std::isfinite(p.path_acceleration) || !(p.path_acceleration>0) ||
         !std::isfinite(p.path_jerk) || !(p.path_jerk>0) ||
-        !std::isfinite(p.path_clock_bandwidth) || !(p.path_clock_bandwidth>0))
+        !std::isfinite(p.path_clock_bandwidth) || !(p.path_clock_bandwidth>0) ||
+        !(p.retiming_velocity_scale>0 && p.retiming_velocity_scale<=1) ||
+        !(p.retiming_acceleration_scale>0 && p.retiming_acceleration_scale<=1) ||
+        !(p.retiming_jerk_scale>0 && p.retiming_jerk_scale<=1) ||
+        !(p.retiming_sample_period>0 && std::isfinite(p.retiming_sample_period)))
         throw std::invalid_argument("Invalid controller configuration");
     return p;
 }
@@ -250,7 +256,12 @@ void TopicNode::receiveTrajectory(const trajectory_msgs::JointTrajectory::ConstP
             }
         }
     }
-    plan.last=samples.back(); plan.duration=times.back();
+    plan.last=samples.back(); plan.duration=times.back(); plan.timed=false;
+    if(params_.geometric_tracking && params_.path_retiming) {
+        std::string error;
+        if(!retimePlan(plan,params_,error))
+            ROS_WARN_STREAM("TOPP-RA retiming failed for trajectory "<<id<<", using path governor: "<<error);
+    }
     if(params_.geometric_tracking && !plan.buildPath()) {
         ROS_WARN("Geometric path construction failed: nonfinite coefficients or path point budget exceeded");
         controller_->releasePlan(slot);reject(Reason::INVALID_POINTS);return;

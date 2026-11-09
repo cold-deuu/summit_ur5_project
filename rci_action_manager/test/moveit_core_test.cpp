@@ -230,5 +230,59 @@ int main(int argc,char **argv) {
         require(unslewed.output.load(status) && status.command_valid,"Acceleration-OFF step failed");
         require(std::abs(status.velocity[0])>.008001,"Acceleration bound remained active");
         require(std::abs(status.velocity[0])<=.400001,"Acceleration OFF bypassed speed bound");
+
+        // A fixed-schedule linear corner (wrist reversal) exceeds the bounds as
+        // timed. TOPP-RA retiming must bound the reference and track it.
+        {
+            p.acceleration_limits=true;p.torque_limits=torque_limits;p.geometric_tracking=true;
+            p.transition_duration=.4;p.path_retiming=true;p.jerk<<8,8,8,10,10,10;
+            Controller smooth(p);joints.v.fill(0);
+            for(int i=0;i<10;++i) {
+                joints.stamp=wrench.stamp=now;wrench.value.fill(0);
+                smooth.joint_input.store(joints);smooth.wrench_input.store(wrench);smooth.step(now);now+=.01;
+            }
+            slot=smooth.acquirePlan();auto &corner=smooth.plan(slot);
+            Sample s0,s1,s2;s0.q=Eigen::Map<const Vec>(joints.q.data());s1=s0;s2=s0;
+            s1.q(5)+=1.2;s2.q(5)+=.2;s1.q(0)+=.1;s2.q(0)+=.2;s1.v=(s2.q-s0.q)/4;
+            corner.first=s0;corner.last=s2;corner.duration=4;corner.start_time=now;corner.id=5;
+            corner.segments.push_back(Segment::make(0,2,s0,s1));corner.segments.push_back(Segment::make(2,2,s1,s2));
+            std::string error;
+            require(retimePlan(corner,p,error),"TOPP-RA retiming failed");
+            require(corner.timed && corner.duration>4,"Retiming did not slow the infeasible schedule");
+            require((corner.last.q-s2.q).norm()<1e-6 && corner.last.v.norm()<1e-12,"Retimed endpoint changed");
+            for(int k=0;k<=1000;++k) {
+                const Sample value=corner.sample(corner.duration*k/1000.0);
+                for(int j=0;j<6;++j) {
+                    require(std::abs(value.v(j))<=p.velocity(j)*p.retiming_velocity_scale*1.05,"Retimed velocity bound");
+                    require(std::abs(value.a(j))<=p.acceleration(j)*p.retiming_acceleration_scale*1.1,"Retimed acceleration bound");
+                }
+            }
+            double reference_jerk=0;
+            for(int k=1;k<=1000;++k) {
+                const double t0=corner.duration*(k-1)/1000.0,t1=corner.duration*k/1000.0;
+                reference_jerk=std::max(reference_jerk,((corner.sample(t1).a-corner.sample(t0).a)/(t1-t0)).cwiseAbs().cwiseQuotient(p.jerk).maxCoeff());
+            }
+            require(reference_jerk<=p.retiming_jerk_scale*1.05,"Retimed reference jerk bound");
+            require(corner.buildPath(),"Retimed path build");smooth.submitPlan(slot);
+            allocations=0;double peak_jerk=0;Vec prior_velocity=Vec::Zero(),prior_acceleration=Vec::Zero();
+            for(int i=0;i<3000 && status.result!=Result::SUCCEEDED;++i) {
+                joints.stamp=wrench.stamp=now;
+                smooth.joint_input.store(joints);smooth.wrench_input.store(wrench);
+                allocation_guard_start();smooth.step(now);allocations+=allocation_guard_stop();
+                require(smooth.output.load(status) && status.command_valid,"Retimed step failed");
+                require(status.result!=Result::ABORTED,"Retimed tracking aborted");
+                const Vec velocity=Eigen::Map<const Vec>(status.velocity.data());
+                const Vec acceleration=(velocity-prior_velocity)/.01;
+                for(int j=0;j<6;++j) {
+                    peak_jerk=std::max(peak_jerk,std::abs(acceleration(j)-prior_acceleration(j))/.01);
+                }
+                prior_velocity=velocity;prior_acceleration=acceleration;
+                joints.q=status.command;joints.v=status.velocity;now+=.01;
+            }
+            require(allocations==0,"Retimed RT allocation");
+            require(status.result==Result::SUCCEEDED,"Retimed corner did not finish");
+            std::cout<<"retimed duration="<<corner.duration<<" reference_jerk/limit="<<reference_jerk<<" peak_command_jerk="<<peak_jerk
+                     <<" allocations="<<allocations<<std::endl;
+        }
     }
 }

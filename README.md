@@ -24,7 +24,7 @@ source devel/setup.bash
 
 의존성이 설치된 환경에서는 바로 `catkin_make`하면 된다. Pinocchio/Eigen 컴파일의 메모리 사용량 때문에 처음에는 `-j2`를 권장한다. 개인 `/home/chan/local` 경로는 필요하지 않다.
 
-주요 의존성은 Pinocchio, eiquadprog, **ROS Noetic FCL**, libccd, ROS control/controllers, UR driver/calibration, MoveIt, NumPy/SciPy/Matplotlib이다. 오래된 시스템 `libfcl-dev`만으로 `ros-noetic-fcl`을 대체하지 않는다. 기존 MuJoCo 2.1 SDK, 모델 mesh와 C++ SCA 런타임 weight는 포함되어 있다. C++ 빌드에 PyTorch/CUDA는 필요하지 않다.
+주요 의존성은 Pinocchio, eiquadprog, **toppra v0.6.4 C++**(설치 스크립트가 소스 빌드), **ROS Noetic FCL**, libccd, ROS control/controllers, UR driver/calibration, MoveIt, NumPy/SciPy/Matplotlib이다. 오래된 시스템 `libfcl-dev`만으로 `ros-noetic-fcl`을 대체하지 않는다. 기존 MuJoCo 2.1 SDK, 모델 mesh와 C++ SCA 런타임 weight는 포함되어 있다. C++ 빌드에 PyTorch/CUDA는 필요하지 않다.
 
 Python MuJoCo 시뮬레이션·영상 렌더링까지 사용할 경우:
 

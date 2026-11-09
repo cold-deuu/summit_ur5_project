@@ -26,6 +26,16 @@ set +u
 source /opt/ros/noetic/setup.bash
 set -u
 rosdep install --from-paths "$repo_dir" --ignore-src --rosdistro noetic -y
+# TOPP-RA C++ (HQP path retiming); not available as a Noetic apt package.
+if [[ ! -f /usr/local/lib/cmake/toppra/toppraConfig.cmake ]]; then
+  toppra_dir=$(mktemp -d)
+  git clone --depth 1 --branch v0.6.4 https://github.com/hungpham2511/toppra.git "$toppra_dir"
+  cmake -S "$toppra_dir/cpp" -B "$toppra_dir/build" -DCMAKE_BUILD_TYPE=Release \
+    -DBUILD_TESTS=OFF -DPYTHON_BINDINGS=OFF -DTOPPRA_WARN_ON=OFF -DCMAKE_INSTALL_PREFIX=/usr/local
+  cmake --build "$toppra_dir/build" -j2
+  sudo cmake --install "$toppra_dir/build" && sudo ldconfig
+  rm -rf "$toppra_dir"
+fi
 if $with_sim; then
   python3 -m pip install --user -r "$repo_dir/scripts/requirements-simulation.txt"
 fi

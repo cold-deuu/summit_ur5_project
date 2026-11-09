@@ -283,7 +283,7 @@ void Controller::step(double now) {
         status_.trajectory_id=plans_[active_].id;
         start_=std::max(now,plans_[active_].start_time);plan_elapsed_=0;
         path_progress_=path_last_progress_=0;path_progress_stamp_=start_;
-        path_reference_.reset();path_handover_elapsed_=0;
+        path_reference_.reset();path_handover_elapsed_=0;path_time_=0;
         path_clock_.reset();path_cruise_started_=false;
         status_.state=State::TRACKING;
         error_sum_=0; error_count_=0; status_.max_error=0; status_.rms=0;
@@ -306,7 +306,7 @@ void Controller::step(double now) {
                 nominal_.v*=scale;nominal_.a*=scale*scale;
             } else {
                 plan.follow(q,path_progress_,p_.path_lookahead,p_.path_search_window);
-                if(!path_cruise_started_) {
+                if(!plan.timed && !path_cruise_started_) {
                     path_reference_.startCruise(plan.duration*plan.parameter_scale,
                         p_.path_speed,p_.path_acceleration,p_.path_jerk);
                     path_cruise_started_=true;
@@ -317,6 +317,13 @@ void Controller::step(double now) {
                 const double lag=(nominal_.q-q).norm();
                 const double following=std::max(0.0,std::min(1.0,(2*p_.path_lookahead-lag)/p_.path_lookahead));
                 const double increment=path_clock_.advance(scale*following,dt_,p_.path_clock_bandwidth);
+                if(plan.timed) {
+                    // TOPP-RA time is the path parameter; the lag-aware clock only slows it.
+                    path_time_=std::min(plan.duration,path_time_+increment);
+                    nominal_=plan.sample(path_time_);
+                    nominal_.a=nominal_.a*path_clock_.rate*path_clock_.rate+nominal_.v*path_clock_.derivative;
+                    nominal_.v*=path_clock_.rate;
+                } else {
                 path_reference_.advance(increment);
                 nominal_=plan.sampleProgress(path_reference_.position);
                 const Vec derivative=nominal_.v;
@@ -325,6 +332,7 @@ void Controller::step(double now) {
                     path_reference_.velocity*path_clock_.derivative;
                 nominal_.a=nominal_.a*speed*speed+derivative*acceleration;
                 nominal_.v=derivative*speed;
+                }
             }
             if(path_progress_>path_last_progress_+1e-4) {
                 path_last_progress_=path_progress_;path_progress_stamp_=now;
@@ -410,8 +418,9 @@ void Controller::step(double now) {
             finish(Result::ABORTED,Reason::PATH_TOLERANCE);
             nominal_.q=hold_; nominal_.v.setZero(); nominal_.a.setZero();
         } else if(started_ && (p_.geometric_tracking ?
-                  (path_reference_.position>=plans_[active_].duration*plans_[active_].parameter_scale-1e-9 &&
-                   std::abs(path_reference_.velocity)<1e-8) :
+                  (plans_[active_].timed ? path_time_>=plans_[active_].duration :
+                   (path_reference_.position>=plans_[active_].duration*plans_[active_].parameter_scale-1e-9 &&
+                    std::abs(path_reference_.velocity)<1e-8)) :
                   plan_elapsed_>=plans_[active_].duration)) {
             if(status_.nominal_error<p_.goal_tolerance &&
                v.cwiseAbs().maxCoeff()<p_.goal_velocity_tolerance) {
