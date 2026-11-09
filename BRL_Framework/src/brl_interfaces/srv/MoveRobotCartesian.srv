@@ -1,0 +1,15 @@
+# MoveRobotCartesian - Cartesian 이동
+# Motion Planning을 통한 로봇 End-effector 이동
+
+# Request - 목표 pose (world frame)
+float64 x                # X 좌표 (m)
+float64 y                # Y 좌표 (m)
+float64 z                # Z 좌표 (m)
+float64 roll             # Roll (rad)
+float64 pitch            # Pitch (rad)
+float64 yaw              # Yaw (rad)
+
+---
+# Response
+bool success             # 이동 성공 여부
+string message           # 상태 메시지

@@ -1,0 +1,16 @@
+# PrepareNavigation Action
+# 로봇 arm을 navigation 자세로 이동
+# BT: PrepareNavigation node에서 호출
+
+# Goal
+string robot_name        # 로봇 이름 (로깅용)
+
+---
+# Result
+bool success             # 성공 여부
+string message           # 결과 메시지
+
+---
+# Feedback
+int32 progress           # 진행률 (0-100)
+string status            # 현재 상태

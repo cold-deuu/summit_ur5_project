@@ -1,0 +1,18 @@
+# PlaceTomato Action
+# 토마토를 바구니에 배치 (tomato_class 기반으로 basket 결정)
+# BT: PlaceTomato node에서 호출
+
+# Goal
+string robot_name        # 로봇 이름
+string tomato_name       # 토마토 이름
+string tomato_class      # "0"=ripe, "1"=unripe, "2"=rotten
+
+---
+# Result
+bool success             # 성공 여부
+string message           # 결과 메시지
+
+---
+# Feedback
+int32 progress           # 진행률 (0-100)
+string status            # 현재 상태

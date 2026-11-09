@@ -1,0 +1,11 @@
+# ExecuteBT - Behavior Tree 실행
+# BT Executor에 XML 파일 실행 요청
+
+# Request
+string xml_file_path     # BT XML 파일 경로
+string instruction       # 원본 명령 (로깅용)
+
+---
+# Response
+bool success             # BT 실행 시작 성공 여부
+string message           # 상태 메시지

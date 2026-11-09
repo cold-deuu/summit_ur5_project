@@ -1,0 +1,10 @@
+# Existing detector / scene-state runtime dependencies. ROS comes from Noetic.
+numpy
+scipy
+opencv-python
+ultralytics
+pydantic>=2.0.0
+PyYAML
+rospkg
+# Desktop process/control GUI (run_gui.sh).
+PyQt5

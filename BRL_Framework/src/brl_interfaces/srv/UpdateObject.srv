@@ -1,0 +1,10 @@
+# UpdateObject - 객체 정보 업데이트
+# Knowledge Base에 Object 생성/업데이트 (brl_sensor YOLO에서 호출)
+
+# Request
+Object object_data       # 업데이트할 객체 정보
+
+---
+# Response
+bool success             # 성공 여부
+string message           # 상태 메시지

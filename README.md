@@ -45,6 +45,60 @@ bash ~/catkin_ws/src/summit_ur5_project/scripts/install_dependencies.sh --with-s
 | `robot_description` | Summit·UR·gripper URDF, MuJoCo 장면, mesh |
 | `sca_pkg` | 기존 SCA 코드와 weight. **현재 제약은 비활성** |
 | `mujoco_ros` | 기존 C++ simulator, 메시지, MuJoCo 2.1 SDK |
+| `BRL_Framework` | **외부기관** 모션플래닝·task planner·sensing (`[HQP]` 표시 부분만 수정) |
+| `robotiq_85_msgs` | BRL 모션 노드용 Robotiq 그리퍼 메시지 (Stanley Innovation 원본) |
+
+## BRL 모션플래너 → HQP 연동
+
+```
+BRL motion_planner (MoveIt: 계획만) ──JointTrajectory──▶ HQP moveit_optimal (항상 대기) ──▶ 로봇
+        ▲    /rci_action_manager/moveit_plan              │ TOPP-RA 재시간화 + admittance
+        └──── 성공/거절/중단 ◀── /moveit_optimal_controller/status
+        └──── 실제 관절값(/joint_states) → 다음 계획의 시작점
+```
+
+BRL은 계획만 하고 `move_group.execute()`를 쓰지 않는다. HQP가 궤적을 받아 필터링한 뒤 로봇을 움직인다.
+
+### 시뮬에서 실행 (도커 안)
+
+| 순서 | 명령 | 설명 |
+|---|---|---|
+| 1 | `roslaunch rci_action_manager brl_hqp_sim.launch` | MuJoCo + HQP + 계획 서버 (`headless:=true` 가능) |
+| 2 | `rosrun motion_planning motion_planner_node.py brl_robot` | BRL 모션플래너 (새 터미널) |
+| 3 | 아래 action 중 하나 | 동작 요청 |
+
+```bash
+rostopic pub -1 /brl_robot/prepare_navigation/goal brl_interfaces/PrepareNavigationActionGoal "goal: {robot_name: brl_robot}"
+rostopic pub -1 /brl_robot/scan_tomato/goal brl_interfaces/ScanTomatoActionGoal "goal: {robot_name: brl_robot}"
+rostopic echo /moveit_optimal_controller/status/last_result   # SUCCEEDED / REJECTED / ABORTED
+```
+
+도커 단축 명령은 `hqpsim` → `brlmp`. 시뮬에는 외부기관 MoveIt 설정이 없어서 이 레포 모델로 계획 전용 `move_group`을 대신 띄운다(`brl_sim_*.yaml`). pick은 `robot_base_footprint` 프레임이 시뮬에 없어 미검증.
+
+### BRL 쪽 수정 (`[HQP]` / `Noetic add` 표시)
+
+| 파일 | 변경 |
+|---|---|
+| `motion_planning/.../motion_planner.py` | `execute_with_preempt`, `_execute_scan_synchronously`를 HQP 송신으로 교체 (원본은 주석, 이름·반환값 동일) |
+| 같은 파일 | `plan()` Noetic 튜플 반환 처리 2곳 (반환값은 원래와 동일) |
+| `motion_planner.py`, `motion_planner_node.py` | visual servoing 임시 주석 |
+| `motion_planning/package.xml` | `rci_action_manager` 의존성 |
+
+### 동작 규칙
+
+| 상황 | 동작 |
+|---|---|
+| 궤적 수신 | HQP가 경로만 쓰고 TOPP-RA로 시간 재계산 (`limits` 의 0.9/0.9, 저크 0.8) |
+| HOLDING 중 admittance로 밀림 | 다음 계획은 밀린 실제 위치에서 시작, HQP가 누적 변위를 rebase |
+| 계획 후 더 밀려 HQP가 `START_MISMATCH` 거절 | 같은 최종 관절 목표로 현재 위치에서 재계획 (최대 `~hqp_start_retry`=3) |
+| action preempt | HQP에 현재 위치 hold 궤적 전송 |
+| 성공/실패 판단 | HQP status의 `SUCCEEDED/REJECTED/ABORTED` |
+
+모션 노드 파라미터: `~hqp_trajectory_topic`, `~hqp_status_topic`, `~hqp_joint_names`(기본 `ur5e_*` 6축), `~hqp_start_retry`.
+
+### 실기에서
+
+HQP 실기 launch(예: `ur5e_moveit_field.launch`)와 외부기관 `move_group`이 떠 있는 상태에서 2번만 실행한다. 확인할 것: 외부 MoveIt 그룹 `manipulator`의 관절 이름이 HQP와 다르면 `~hqp_joint_names`, 외부 MoveIt의 `controller_list`로 로봇에 직접 실행되는 경로가 없을 것(BRL은 execute를 안 함), 실기 `limits/velocity`는 1.57로 올려 두었으므로 첫 시험은 낮춰서 시작. **실기 연동은 아직 검증하지 않았다.**
 
 ## BRL 현장: real.cpp action 서버
 

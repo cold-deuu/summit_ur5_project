@@ -39,3 +39,6 @@ __pycache__/
 .env.*
 *.pem
 *.key
+
+# BRL_Framework runtime GUI logs
+/BRL_Framework/logs/

@@ -1,0 +1,515 @@
+{
+  "baseline": {
+    "task_planning": "03 offline_actions replay with one T1.yaml plan for two fixed logged tomatoes",
+    "all_motion_sensing_parameters": "01_BRL_ORIGIN",
+    "scene_state": "01 SceneManager in memory; static JSON initialization; no database integration",
+    "detect": "Always inject two fixed 01 log coordinates; no camera/YOLO or live detection service required"
+  },
+  "files": [
+    {
+      "target": "src/CMakeLists.txt",
+      "source": "01_BRL_ORIGIN/src/CMakeLists.txt",
+      "source_sha256": "9daeb27c05be5e85e5a29a335b77a1c6f3c98ac694c62ad1b721aad4b0b500ca",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/brl_interfaces/CMakeLists.txt",
+      "source": "01_BRL_ORIGIN/src/brl_interfaces/CMakeLists.txt",
+      "source_sha256": "d66244a34c1b7b5d3644f8f533e3f970455b73ab267a9896ea19a05e9fd41128",
+      "mode": "adapted"
+    },
+    {
+      "target": "src/brl_interfaces/action/PickTomato.action",
+      "source": "01_BRL_ORIGIN/src/brl_interfaces/action/PickTomato.action",
+      "source_sha256": "dc3a79d6aae6d69db2123b75e7ef978c482bd0f6f489e8b4f5c8f52611a20694",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/brl_interfaces/action/PlaceTomato.action",
+      "source": "01_BRL_ORIGIN/src/brl_interfaces/action/PlaceTomato.action",
+      "source_sha256": "c96335f6b66045a904e05eea1d6671393dc88579f756fa0090d901187cfac306",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/brl_interfaces/action/PrepareNavigation.action",
+      "source": "01_BRL_ORIGIN/src/brl_interfaces/action/PrepareNavigation.action",
+      "source_sha256": "f387c6dc4bdb8db8e682e14ca25c449f2ca8ff8da8446feb1f64a396edcc732e",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/brl_interfaces/action/ScanTomato.action",
+      "source": "01_BRL_ORIGIN/src/brl_interfaces/action/ScanTomato.action",
+      "source_sha256": "af66f1d047d7175e6f756936f6fea329a980d719b678315a266b671d3be20ed3",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/brl_interfaces/msg/Detection2D.msg",
+      "source": "01_BRL_ORIGIN/src/brl_interfaces/msg/Detection2D.msg",
+      "source_sha256": "631a578f7704492291aef7fc843cc3388eeebfe74595b909b70ecd2a67858bec",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/brl_interfaces/msg/Environment.msg",
+      "source": "01_BRL_ORIGIN/src/brl_interfaces/msg/Environment.msg",
+      "source_sha256": "e62f8640e75feac0a292151cd7eb45d1cacfe6e2d3a366f8f5339aa104dbc9c5",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/brl_interfaces/msg/GripperCmd.msg",
+      "source": "01_BRL_ORIGIN/src/brl_interfaces/msg/GripperCmd.msg",
+      "source_sha256": "e7f8e6541e47866df34993bfa7c08f78ba0e26a73778177053e049109cdf4c03",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/brl_interfaces/msg/Location.msg",
+      "source": "01_BRL_ORIGIN/src/brl_interfaces/msg/Location.msg",
+      "source_sha256": "da7482dea2e5bf8f8157797b33d679a5f6e7bb2d7a7011ad296d832dfa9f6bdf",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/brl_interfaces/msg/Object.msg",
+      "source": "01_BRL_ORIGIN/src/brl_interfaces/msg/Object.msg",
+      "source_sha256": "137482e5f848e59d0e1c6fe36aab660b5084c397ad149443dceeed7d66a2edd8",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/brl_interfaces/msg/Robot.msg",
+      "source": "01_BRL_ORIGIN/src/brl_interfaces/msg/Robot.msg",
+      "source_sha256": "9b91bbd2814a9a2a57c2e7d8bef8c122fc6a42e8e5c83059984af89bbc978b55",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/brl_interfaces/msg/SceneGraphMsg.msg",
+      "source": "01_BRL_ORIGIN/src/brl_interfaces/msg/SceneGraphMsg.msg",
+      "source_sha256": "56ee6a982d4860c67fa361b5d6159a764b141887589a4baa9464e07f7ff14c30",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/brl_interfaces/package.xml",
+      "source": "01_BRL_ORIGIN/src/brl_interfaces/package.xml",
+      "source_sha256": "dce2ab5db8dd4dbac38cae8c3c35599550d5181ba603ad9f1e6a0dbacef7668b",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/brl_interfaces/srv/ExecuteBT.srv",
+      "source": "01_BRL_ORIGIN/src/brl_interfaces/srv/ExecuteBT.srv",
+      "source_sha256": "f86f68cdacc1b5f2e7eafa50c555ba99193c8938d6e365d1f6c44884a49402cc",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/brl_interfaces/srv/GenerateTaskPlan.srv",
+      "source": "01_BRL_ORIGIN/src/brl_interfaces/srv/GenerateTaskPlan.srv",
+      "source_sha256": "1ca484e1056a7cc674def09e5a2a0936435f9106a15ffe8ee8a84370d14f5bad",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/brl_interfaces/srv/MoveRobotCartesian.srv",
+      "source": "01_BRL_ORIGIN/src/brl_interfaces/srv/MoveRobotCartesian.srv",
+      "source_sha256": "081cbad53617c807afd67b4f1edc57c0a5f9d35ea0192931f2e3067f5dc328a9",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/brl_interfaces/srv/PixelTo3D.srv",
+      "source": "01_BRL_ORIGIN/src/brl_interfaces/srv/PixelTo3D.srv",
+      "source_sha256": "dd5fa6151c1c113efedbbbe0bb82626466477f1315a993ffd653e1aa86ab305b",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/brl_interfaces/srv/TriggerSensorScan.srv",
+      "source": "01_BRL_ORIGIN/src/brl_interfaces/srv/TriggerSensorScan.srv",
+      "source_sha256": "0d14a54842f1060041145c91d57045721534aca799b46434790142173e5f5b1c",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/brl_interfaces/srv/UpdateEnvironment.srv",
+      "source": "01_BRL_ORIGIN/src/brl_interfaces/srv/UpdateEnvironment.srv",
+      "source_sha256": "039d24adc15ccd95ab76e314947c265137efb4fc8933dd8ffeb814338300ff38",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/brl_interfaces/srv/UpdateObject.srv",
+      "source": "01_BRL_ORIGIN/src/brl_interfaces/srv/UpdateObject.srv",
+      "source_sha256": "ad3fcfd43176f9c30efc5b3ec4a7ea8859fb45512477c629f516c3d1cc8f394e",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/brl_interfaces/srv/UpdateRobot.srv",
+      "source": "01_BRL_ORIGIN/src/brl_interfaces/srv/UpdateRobot.srv",
+      "source_sha256": "2f23ef029c3df00a4e0d772a49ab41fe050f5db14c9ff036cdbe7218d00cb953",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/brl_sensor/CMakeLists.txt",
+      "source": "01_BRL_ORIGIN/src/brl_sensor/CMakeLists.txt",
+      "source_sha256": "0a2a08689ba18070214976f380449baf9088734c5e07207014474b7759316baf",
+      "mode": "adapted"
+    },
+    {
+      "target": "src/brl_sensor/config/robot_config.yaml",
+      "source": "01_BRL_ORIGIN/src/brl_sensor/config/robot_config.yaml",
+      "source_sha256": "44c1a303777238f2128cc2c4cf74976321e2d3b75f99c1dbc9e18c144866dd91",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/brl_sensor/models/250219.pt",
+      "source": "01_BRL_ORIGIN/src/brl_sensor/models/250219.pt",
+      "source_sha256": "7157c6185a1d1975b951a4594b2aad6ed56b75c6f927450587b090738f23cf21",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/brl_sensor/package.xml",
+      "source": "01_BRL_ORIGIN/src/brl_sensor/package.xml",
+      "source_sha256": "827293ade1dbff216b19be2d5310b3ed3a10d7b7d2831da608ae85b2178dc736",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/brl_sensor/scripts/dummy_sensor_node",
+      "source": "01_BRL_ORIGIN/src/brl_sensor/scripts/dummy_sensor_node",
+      "source_sha256": "1a6a380989bd868c6e37dfb354e551132931c5c6706c66a9a2a7c28ced674e86",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/brl_sensor/scripts/sensor_node.py",
+      "source": "01_BRL_ORIGIN/src/brl_sensor/scripts/sensor_node.py",
+      "source_sha256": "3327c8103bbb10149f244d18711b18fd726da516b78685f801259a37919f3d86",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/brl_sensor/setup.py",
+      "source": "01_BRL_ORIGIN/src/brl_sensor/setup.py",
+      "source_sha256": "c0454941d23de9c764591b8f15a41806d1d20a24c28a6048f40711f81c3fb0a4",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/brl_sensor/src/brl_sensor/__init__.py",
+      "source": "01_BRL_ORIGIN/src/brl_sensor/src/brl_sensor/__init__.py",
+      "source_sha256": "65212d2ffac1eac7513906f53e1d5a6dac70f1f1c2b6db0824f608e12b516e7a",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/brl_sensor/src/brl_sensor/dummy_yolo_tomato_detector.py",
+      "source": "01_BRL_ORIGIN/src/brl_sensor/src/brl_sensor/dummy_yolo_tomato_detector.py",
+      "source_sha256": "0c0f51cbb80d97600c0e0c81e56a21dba16e3c3f6598ab5659d918d25491a213",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/brl_sensor/src/brl_sensor/robot_tracker.py",
+      "source": "01_BRL_ORIGIN/src/brl_sensor/src/brl_sensor/robot_tracker.py",
+      "source_sha256": "19c35f3dc5da6f8da7bdad02c320a8ed730777b64abe9f8b5b9b26ff3b515898",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/brl_sensor/src/brl_sensor/tomato_detector.py",
+      "source": "01_BRL_ORIGIN/src/brl_sensor/src/brl_sensor/tomato_detector.py",
+      "source_sha256": "d793ac7591bb5e5e05c10baa98d991410c5c6259304428b46c96b1774e339255",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/common_models/CMakeLists.txt",
+      "source": "01_BRL_ORIGIN/src/common_models/CMakeLists.txt",
+      "source_sha256": "851c5a685e6a515ef2fe342667cad910bec1e77eb785852061ff363169b88b94",
+      "mode": "adapted"
+    },
+    {
+      "target": "src/common_models/package.xml",
+      "source": "01_BRL_ORIGIN/src/common_models/package.xml",
+      "source_sha256": "3b79331e30eb94ee7cbee5b02b384cb0fd1b6abc8e6fca8a9e66f32d16482dc2",
+      "mode": "adapted"
+    },
+    {
+      "target": "src/common_models/setup.py",
+      "source": "01_BRL_ORIGIN/src/common_models/setup.py",
+      "source_sha256": "ef4946912037ef05ee366683bbeb3d440918296d34c7b56c03594bbee5aaab68",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/common_models/src/common_models/__init__.py",
+      "source": "01_BRL_ORIGIN/src/common_models/src/common_models/__init__.py",
+      "source_sha256": "5955656d09837c43dcff3387a77b9fb76bf9995b6ea70ad90e7b5832eafdb121",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/common_models/src/common_models/base.py",
+      "source": "01_BRL_ORIGIN/src/common_models/src/common_models/base.py",
+      "source_sha256": "02666f3ea9d9f4423214bc980c49738672ee855a877066246e8d9b6cd9c41e7a",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/common_models/src/common_models/converters.py",
+      "source": "01_BRL_ORIGIN/src/common_models/src/common_models/converters.py",
+      "source_sha256": "3c53277dfb50758708386b7aea87643e4fa707b20bb1576a795e7c3d1b5a388d",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/common_models/src/common_models/planning.py",
+      "source": "01_BRL_ORIGIN/src/common_models/src/common_models/planning.py",
+      "source_sha256": "7292dc300f08f37b179bf67345d012171b944afd32d9440c64a2d43b9e747f86",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/common_models/src/common_models/scene.py",
+      "source": "01_BRL_ORIGIN/src/common_models/src/common_models/scene.py",
+      "source_sha256": "9e8c62651e8571bd611d50f22ade37e8a946fedf3205e7d85d253215d7d84c47",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/knowledge_interface/CMakeLists.txt",
+      "source": "01_BRL_ORIGIN/src/knowledge_interface/CMakeLists.txt",
+      "source_sha256": "84fc32b37158dc69448a160d53c7d565f4b7482ab2f174b4aff2698ec328268e",
+      "mode": "adapted"
+    },
+    {
+      "target": "src/knowledge_interface/config/real_farm_config.json",
+      "source": "01_BRL_ORIGIN/src/knowledge_interface/config/real_farm_config.json",
+      "source_sha256": "a9756b2ab6dd2df9336ee8b2014024224407605a59e0dd6535c9994bba53980e",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/knowledge_interface/launch/knowledge_graph.launch",
+      "source": "01_BRL_ORIGIN/src/knowledge_interface/launch/knowledge_graph.launch",
+      "source_sha256": "a67b408e6de046d2a8a860a7e16ae76194a2f6d6dce2bc9cc0afa5028cc5ef8b",
+      "mode": "adapted"
+    },
+    {
+      "target": "src/knowledge_interface/package.xml",
+      "source": "01_BRL_ORIGIN/src/knowledge_interface/package.xml",
+      "source_sha256": "584933df256cfccb575ecdd8d0ad02610dde14b3cdbf4ca3c3953670bf495afb",
+      "mode": "adapted"
+    },
+    {
+      "target": "src/knowledge_interface/scripts/knowledge_graph_node.py",
+      "source": "01_BRL_ORIGIN/src/knowledge_interface/scripts/knowledge_graph_node.py",
+      "source_sha256": "ed13f0f46152ad8689c7da64b05e69aa115c92059ace7cad2081f520b6231c89",
+      "mode": "adapted"
+    },
+    {
+      "target": "src/knowledge_interface/setup.py",
+      "source": "01_BRL_ORIGIN/src/knowledge_interface/setup.py",
+      "source_sha256": "e4a12b017e8771256c107185cccad719d40197b39d5d7cbc1ad6e3dc8a166756",
+      "mode": "adapted"
+    },
+    {
+      "target": "src/knowledge_interface/src/knowledge_interface/__init__.py",
+      "source": "01_BRL_ORIGIN/src/knowledge_interface/src/knowledge_interface/__init__.py",
+      "source_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/knowledge_interface/src/knowledge_interface/scene_graph/__init__.py",
+      "source": "01_BRL_ORIGIN/src/knowledge_interface/src/knowledge_interface/scene_graph/__init__.py",
+      "source_sha256": "bad3ceb7b0ba826c8ab2d514eebd9517c51b863f71f7d52c88041cfcb169ab82",
+      "mode": "adapted"
+    },
+    {
+      "target": "src/knowledge_interface/src/knowledge_interface/scene_graph/scene_manager.py",
+      "source": "01_BRL_ORIGIN/src/knowledge_interface/src/knowledge_interface/scene_graph/scene_manager.py",
+      "source_sha256": "7daac10239a823aed511c0417786815a43be569650b38f28ea43d785fd5c0fcf",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/motion_planning/CMakeLists.txt",
+      "source": "01_BRL_ORIGIN/src/motion_planning/CMakeLists.txt",
+      "source_sha256": "0bd524f20e0aeadaad12e3cf659da8bfdc85b5aefaeaab6054c64b65043ae3cd",
+      "mode": "adapted"
+    },
+    {
+      "target": "src/motion_planning/package.xml",
+      "source": "01_BRL_ORIGIN/src/motion_planning/package.xml",
+      "source_sha256": "284fe4d6b97055bd97c60d70112e59fe2896114cb47df3421257444ba75c3b87",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/motion_planning/scripts/motion_planner_node.py",
+      "source": "01_BRL_ORIGIN/src/motion_planning/scripts/motion_planner_node.py",
+      "source_sha256": "eac780df21bb0bcdc3289b2dc5025b7d11e8f921c6c4df598168d0943099e542",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/motion_planning/setup.py",
+      "source": "01_BRL_ORIGIN/src/motion_planning/setup.py",
+      "source_sha256": "3bb9f5fadddcf8365f8a2210e2781886156c2bcb24dd80d09ab069723221c2f8",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/motion_planning/src/motion_planning/__init__.py",
+      "source": "01_BRL_ORIGIN/src/motion_planning/src/motion_planning/__init__.py",
+      "source_sha256": "1a94f6b7c80a326c1aca106f2f5f5cad01731d7af4b9f212d02c327a059c3118",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/motion_planning/src/motion_planning/motion_planner.py",
+      "source": "01_BRL_ORIGIN/src/motion_planning/src/motion_planning/motion_planner.py",
+      "source_sha256": "1f78c668ec6227491b7671b001e47596600c59894dac9a41cae9059a24ba1d2f",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/motion_planning/src/motion_planning/visual_servoing.py",
+      "source": "01_BRL_ORIGIN/src/motion_planning/src/motion_planning/visual_servoing.py",
+      "source_sha256": "8569c9efe59077763ad7c6aae89f27773e4125ae8eae0d86c178304bb18f782f",
+      "mode": "byte-identical"
+    },
+    {
+      "target": "src/task_planner/CMakeLists.txt",
+      "source": "01_BRL_ORIGIN/src/task_planner/CMakeLists.txt",
+      "source_sha256": "d11dd7db5d59b7424e92508e4b970f684c6649c6b3a2f9a19946de63f2b106ee",
+      "mode": "adapted"
+    },
+    {
+      "target": "src/task_planner/package.xml",
+      "source": "01_BRL_ORIGIN/src/task_planner/package.xml",
+      "source_sha256": "5f1f4a0adcacdc3996ab25ea785165340a88366e64b4ac938cb41dd062e32a86",
+      "mode": "adapted"
+    },
+    {
+      "target": "src/task_planner/setup.py",
+      "source": "01_BRL_ORIGIN/src/task_planner/setup.py",
+      "source_sha256": "255b131e16e1b4c2c842b9b8c83d6d0cad05ad483670c83609b9c19cfc495c9f",
+      "mode": "adapted"
+    },
+    {
+      "target": "src/task_planner/templates/tomato/offline_plans/T1.yaml",
+      "source": "03_BRL_TOMATO/src/pomdp_planner/templates/tomato/offline_plans/T1.yaml",
+      "source_sha256": "2f86904af6bdf8a678e335fea6002dfa37783a7fa90eb9fb2239e400a3745394",
+      "mode": "adapted",
+      "adaptation": "Single two-tomato plan: prepare_nav, detect, pick, scan, place, pick, scan, discard, prepare_nav. Separate pick/scan and no base navigation.",
+      "target_sha256": "6000a90a17b270c02624fb0e89965d350c59e74c4d7813fc3dd7c24ea223e7da"
+    }
+  ],
+  "extracted_methods": [
+    {
+      "name": "scene_graph_callback",
+      "source": "03_BRL_TOMATO/src/pomdp_planner/scripts/pomdp_planner_node.py",
+      "source_ast_sha256": "9b84b92d9fc04461e5d6d55323c80e8bd325ed5c709e0c26be2fd7794287115d",
+      "target_ast_sha256": "9b84b92d9fc04461e5d6d55323c80e8bd325ed5c709e0c26be2fd7794287115d",
+      "adaptation": ""
+    },
+    {
+      "name": "_wait_for_action_server",
+      "source": "03_BRL_TOMATO/src/pomdp_planner/scripts/pomdp_planner_node.py",
+      "source_ast_sha256": "2d28a27b8436fa1b6f9ab482136bac185580e030dc693ef072a473f4c2a6058b",
+      "target_ast_sha256": "2d28a27b8436fa1b6f9ab482136bac185580e030dc693ef072a473f4c2a6058b",
+      "adaptation": ""
+    },
+    {
+      "name": "_execute_pick",
+      "source": "03_BRL_TOMATO/src/pomdp_planner/scripts/pomdp_planner_node.py",
+      "source_ast_sha256": "d3ede4f67293a825d8989f34fd4567abb43274f23e608c56576bb5db41ced78e",
+      "target_ast_sha256": "d3ede4f67293a825d8989f34fd4567abb43274f23e608c56576bb5db41ced78e",
+      "adaptation": ""
+    },
+    {
+      "name": "_execute_scan",
+      "source": "03_BRL_TOMATO/src/pomdp_planner/scripts/pomdp_planner_node.py",
+      "source_ast_sha256": "89cd3bb4ef825ee201d7dafba3ec17b4af3874fa66d24efd365a13faf31b9900",
+      "target_ast_sha256": "7b883f0a3211c5e42d0d6d8a1356d4156bad72338c66aced553abdd173ec4547",
+      "adaptation": "01 TriggerSensorScan has no facts field; getattr(..., \"facts\", []) compatibility only"
+    },
+    {
+      "name": "_execute_place",
+      "source": "03_BRL_TOMATO/src/pomdp_planner/scripts/pomdp_planner_node.py",
+      "source_ast_sha256": "840504d587b3f6a8c91d92344b813ffa674d6395bd2524fcc734904398b9f501",
+      "target_ast_sha256": "840504d587b3f6a8c91d92344b813ffa674d6395bd2524fcc734904398b9f501",
+      "adaptation": ""
+    },
+    {
+      "name": "_execute_discard",
+      "source": "03_BRL_TOMATO/src/pomdp_planner/scripts/pomdp_planner_node.py",
+      "source_ast_sha256": "7cd01908a3237afa9031d18d241bf61ad15cf6353ec356a170e9d26c11830a10",
+      "target_ast_sha256": "7cd01908a3237afa9031d18d241bf61ad15cf6353ec356a170e9d26c11830a10",
+      "adaptation": ""
+    },
+    {
+      "name": "_execute_prepare_nav",
+      "source": "03_BRL_TOMATO/src/pomdp_planner/scripts/pomdp_planner_node.py",
+      "source_ast_sha256": "dc4972f0542a3d1dd2315b0130814119fc1213a831c90ca9171e3f9a8bbae613",
+      "target_ast_sha256": "dc4972f0542a3d1dd2315b0130814119fc1213a831c90ca9171e3f9a8bbae613",
+      "adaptation": ""
+    },
+    {
+      "name": "should_stop",
+      "source": "03_BRL_TOMATO/src/pomdp_planner/scripts/pomdp_planner_node.py",
+      "source_ast_sha256": "bfae1f93399e7e6d8493f5c534fddefe0a6b38983a3f5827af10010d1387bb5c",
+      "target_ast_sha256": "bfae1f93399e7e6d8493f5c534fddefe0a6b38983a3f5827af10010d1387bb5c",
+      "adaptation": ""
+    },
+    {
+      "name": "wait_while_paused",
+      "source": "03_BRL_TOMATO/src/pomdp_planner/scripts/pomdp_planner_node.py",
+      "source_ast_sha256": "5a28ac28bdf5a9f2f14e99ec43dfd244bbd9c1a0ba79f9359373bb139cc37750",
+      "target_ast_sha256": "5a28ac28bdf5a9f2f14e99ec43dfd244bbd9c1a0ba79f9359373bb139cc37750",
+      "adaptation": ""
+    },
+    {
+      "name": "stop_callback",
+      "source": "03_BRL_TOMATO/src/pomdp_planner/scripts/pomdp_planner_node.py",
+      "source_ast_sha256": "97eb00eab2ddd24cfeea8b9848d2a7a6ec48dbb11cf23ddf703a4bf071b06b70",
+      "target_ast_sha256": "97eb00eab2ddd24cfeea8b9848d2a7a6ec48dbb11cf23ddf703a4bf071b06b70",
+      "adaptation": ""
+    },
+    {
+      "name": "pause_callback",
+      "source": "03_BRL_TOMATO/src/pomdp_planner/scripts/pomdp_planner_node.py",
+      "source_ast_sha256": "0bbc1397073d30119534d7b5ee7900ab03ee72e929d5b086a69fc8331665870e",
+      "target_ast_sha256": "0bbc1397073d30119534d7b5ee7900ab03ee72e929d5b086a69fc8331665870e",
+      "adaptation": ""
+    },
+    {
+      "name": "resume_callback",
+      "source": "03_BRL_TOMATO/src/pomdp_planner/scripts/pomdp_planner_node.py",
+      "source_ast_sha256": "bf32babcf4221df91aae8c6bbc6190ed9f6eb46bd3dc31c6dfe54b06ed22d7e0",
+      "target_ast_sha256": "bf32babcf4221df91aae8c6bbc6190ed9f6eb46bd3dc31c6dfe54b06ed22d7e0",
+      "adaptation": ""
+    }
+  ],
+  "removed_files": [
+    {
+      "target": "src/knowledge_interface/scripts/environment_manager_node.py",
+      "source": "01_BRL_ORIGIN/src/knowledge_interface/scripts/environment_manager_node.py",
+      "source_sha256": "33c2bd9a02ecbba7d44c663d6e6dd8ffdfa7ab43eb14c859c94631174d6bacc6",
+      "mode": "removed",
+      "reason": "Database integration removed; runtime state stays in memory"
+    },
+    {
+      "target": "src/knowledge_interface/src/knowledge_interface/knowledge_graph/__init__.py",
+      "source": "01_BRL_ORIGIN/src/knowledge_interface/src/knowledge_interface/knowledge_graph/__init__.py",
+      "source_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "removed",
+      "reason": "Database integration removed; runtime state stays in memory"
+    },
+    {
+      "target": "src/knowledge_interface/src/knowledge_interface/knowledge_graph/cypher_encoder.py",
+      "source": "01_BRL_ORIGIN/src/knowledge_interface/src/knowledge_interface/knowledge_graph/cypher_encoder.py",
+      "source_sha256": "b105c456a04628b779ced6bce2e3168bf9a27fac99fe64f86825291296ab3f57",
+      "mode": "removed",
+      "reason": "Database integration removed; runtime state stays in memory"
+    },
+    {
+      "target": "src/knowledge_interface/src/knowledge_interface/knowledge_graph/graph.py",
+      "source": "01_BRL_ORIGIN/src/knowledge_interface/src/knowledge_interface/knowledge_graph/graph.py",
+      "source_sha256": "36909d59efabb9b92233389ee76bb892fd22ecceea72c951120a844e12f4eac1",
+      "mode": "removed",
+      "reason": "Database integration removed; runtime state stays in memory"
+    },
+    {
+      "target": "src/knowledge_interface/src/knowledge_interface/knowledge_graph/graph_actions.py",
+      "source": "01_BRL_ORIGIN/src/knowledge_interface/src/knowledge_interface/knowledge_graph/graph_actions.py",
+      "source_sha256": "e6c127ba452bc0515afba21a063a657a2c29bc1834ecadc7335817727ae9498c",
+      "mode": "removed",
+      "reason": "Database integration removed; runtime state stays in memory"
+    },
+    {
+      "target": "src/knowledge_interface/src/knowledge_interface/scene_graph/scene_synchronizer.py",
+      "source": "01_BRL_ORIGIN/src/knowledge_interface/src/knowledge_interface/scene_graph/scene_synchronizer.py",
+      "source_sha256": "dc8857ed479fc6a8eb4d17140bb56649759690917ae88bafe528fcfe4bcacf0e",
+      "mode": "removed",
+      "reason": "Database integration removed; runtime state stays in memory"
+    }
+  ],
+  "gui_source": {
+    "target": "run_master_gui.py",
+    "source": "01_BRL_ORIGIN/src/master_gui/mater_gui.py",
+    "source_sha256": "35416a1233660022249e1599141005ca9b47c12fa8899fe70d237c925773899a",
+    "mode": "adapted",
+    "adaptation": "Reuse process cards and asynchronous process management with the native Qt appearance and two-column log layout of 01/03/04; replace BT/LLM/DB controls with 03 offline plan services and read-only ROS telemetry in optional Details tabs; guard process ownership and pending restarts."
+  }
+}

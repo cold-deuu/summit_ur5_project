@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.0.2)
+project(brl_interfaces)
+find_package(catkin REQUIRED COMPONENTS message_generation std_msgs geometry_msgs sensor_msgs actionlib_msgs)
+add_message_files(FILES Environment.msg Location.msg Robot.msg Object.msg SceneGraphMsg.msg Detection2D.msg GripperCmd.msg)
+add_service_files(FILES UpdateEnvironment.srv UpdateRobot.srv UpdateObject.srv GenerateTaskPlan.srv ExecuteBT.srv TriggerSensorScan.srv PixelTo3D.srv MoveRobotCartesian.srv)
+add_action_files(FILES PrepareNavigation.action PickTomato.action PlaceTomato.action ScanTomato.action)
+generate_messages(DEPENDENCIES std_msgs geometry_msgs sensor_msgs actionlib_msgs)
+catkin_package(CATKIN_DEPENDS message_runtime std_msgs geometry_msgs sensor_msgs actionlib_msgs)

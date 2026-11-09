@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>motion_planning</name>
+  <version>1.0.0</version>
+  <description>
+    MoveIt 기반 로봇 암 모션 플래닝 및 Visual Servoing 패키지.
+    실제 로봇에서 실행되며 UR5e MoveIt 런치가 선행되어야 함.
+  </description>
+
+  <maintainer email="brl@example.com">BRL Team</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!-- Build Dependencies -->
+  <build_depend>rospy</build_depend>
+  <build_depend>actionlib</build_depend>
+  <build_depend>actionlib_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>moveit_msgs</build_depend>
+  <build_depend>trajectory_msgs</build_depend>
+  <build_depend>brl_interfaces</build_depend>
+
+  <!-- Runtime Dependencies -->
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>actionlib</exec_depend>
+  <exec_depend>actionlib_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>moveit_msgs</exec_depend>
+  <exec_depend>trajectory_msgs</exec_depend>
+  <exec_depend>brl_interfaces</exec_depend>
+  <exec_depend>moveit_commander</exec_depend>
+  <exec_depend>rci_action_manager</exec_depend> <!-- [HQP] add: MoveitOptimalStatus -->
+
+  <export></export>
+</package>

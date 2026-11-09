@@ -1,0 +1,26 @@
+<launch>
+    <arg name="robot_name" default="brl_robot" />
+    <arg name="offline_plan" default="T1" />
+    <arg name="detection_config" default="$(find task_planner)/config/log_detections.json" />
+    <arg name="start_knowledge" default="true" />
+    <arg name="environment_config" default="$(find knowledge_interface)/config/real_farm_config.json" />
+    <arg name="start_sensing" default="true" />
+    <arg name="start_motion" default="true" />
+    <node if="$(arg start_knowledge)" pkg="knowledge_interface" type="knowledge_graph_node.py"
+          name="knowledge_graph_node" output="screen">
+        <param name="environment_config" value="$(arg environment_config)" />
+    </node>
+    <node if="$(arg start_sensing)" pkg="brl_sensor" type="sensor_node.py"
+          name="brl_sensor_node_$(arg robot_name)" output="screen">
+        <param name="robot_name" value="$(arg robot_name)" />
+    </node>
+    <node if="$(arg start_motion)" pkg="motion_planning" type="motion_planner_node.py"
+          name="motion_planner_node" output="screen">
+        <param name="robot_name" value="$(arg robot_name)" />
+    </node>
+    <node pkg="task_planner" type="task_planner_node.py" name="task_planner_node" output="screen">
+        <param name="robot_name" value="$(arg robot_name)" />
+        <param name="offline_plan" value="$(arg offline_plan)" />
+        <param name="detection_config" value="$(arg detection_config)" />
+    </node>
+</launch>

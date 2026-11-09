@@ -1,0 +1,14 @@
+# Pixel to 3D Position Conversion Service
+# 클릭한 픽셀 좌표를 로봇 base frame 3D 좌표로 변환
+#
+# 사용: CF ADD_TOMATO에서 사용자가 클릭한 위치의 3D 좌표 획득
+
+string robot_name       # 로봇 이름 (카메라 선택용)
+float32 pixel_x         # 픽셀 X 좌표
+float32 pixel_y         # 픽셀 Y 좌표
+---
+bool success
+string message
+float32 x               # Robot base frame X
+float32 y               # Robot base frame Y
+float32 z               # Robot base frame Z

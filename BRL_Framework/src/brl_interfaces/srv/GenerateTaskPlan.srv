@@ -1,0 +1,11 @@
+# GenerateTaskPlan - Task Planning 요청
+# LLM 기반 Task Planning 시작 (task_planner_node에서 처리)
+
+# Request
+string instruction       # 자연어 명령 (예: "Harvest all ripe tomatoes from Stem_1")
+string preferences_json  # Optional planning preferences (빈 문자열 가능)
+
+---
+# Response
+bool success             # Planning 작업 시작 성공 여부
+string message           # 상태 메시지

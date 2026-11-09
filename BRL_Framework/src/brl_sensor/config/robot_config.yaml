@@ -1,0 +1,30 @@
+# Robot Type Configuration for BRL Sensor
+# Used by sensor_node.py to initialize Robot instance
+
+robot_types:
+  harvester:
+    type: "harvester"
+    description: "Autonomous tomato harvesting robot"
+    capabilities: ["NavigateTo", "Harvest"]
+    properties:
+      max_load: 10
+      battery_capacity: 100.0
+
+  mobile:
+    type: "mobile"
+    description: "Mobile navigation robot (e.g., Summit)"
+    capabilities: ["NavigateTo"]
+    properties:
+      battery_capacity: 100.0
+
+  manipulator:
+    type: "manipulator"
+    description: "Manipulation robot (e.g., UR5e, Piper)"
+    capabilities: ["Pick", "Place"]
+    properties:
+      max_payload: 5.0
+
+# Default settings
+default:
+  initial_status: "active"
+  update_interval: 0.5  # Position update interval (seconds)

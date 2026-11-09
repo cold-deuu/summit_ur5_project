@@ -1,0 +1,13 @@
+# TriggerSensorScan - 센서 스캔 트리거
+# BT Action에서 로봇 센서 스캔 요청 (비동기)
+# 범용: location 스캔 또는 특정 object 스캔
+
+# Request
+string robot_name        # 로봇 이름 (예: "harvester_01")
+string target_location   # 스캔할 위치 (예: "Stem_1") - 빈 문자열이면 무시
+string target_object     # 스캔할 객체 (예: "tomato_01") - 빈 문자열이면 무시
+
+---
+# Response
+bool success             # 트리거 성공 여부
+string message           # 상태 메시지

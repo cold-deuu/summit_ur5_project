@@ -1,0 +1,10 @@
+# UpdateRobot - 로봇 정보 업데이트
+# Knowledge Base에 Robot 생성/업데이트 (brl_sensor에서 호출)
+
+# Request
+Robot robot_data         # 업데이트할 로봇 정보
+
+---
+# Response
+bool success             # 성공 여부
+string message           # 상태 메시지

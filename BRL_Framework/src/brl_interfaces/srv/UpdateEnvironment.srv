@@ -1,0 +1,10 @@
+# UpdateEnvironment - 환경 상태 업데이트
+# Knowledge Base의 Environment status 변경
+
+# Request
+string status            # 새로운 상태 (예: "idle", "task_planning", "executing")
+
+---
+# Response
+bool success             # 성공 여부
+string message           # 상태 메시지

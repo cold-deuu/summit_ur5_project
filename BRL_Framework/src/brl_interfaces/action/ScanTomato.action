@@ -1,0 +1,16 @@
+# ScanTomato Action
+# 들고 있는 토마토의 상태 스캔 (rottenness detection)
+# BT: ScanTomato node에서 호출
+
+# Goal
+string robot_name        # 로봇 이름
+
+---
+# Result
+bool success             # 성공 여부
+string message           # 결과 메시지 (class 정보 포함)
+
+---
+# Feedback
+int32 progress           # 진행률 (0-100)
+string status            # 현재 상태

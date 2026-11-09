@@ -1,0 +1,79 @@
+{
+  "_comment": "Real farm environment configuration. Positions are [x, y, theta] based on actual robot navigation logs.",
+  "environment": {
+    "name": "Real_Farm_01",
+    "type": "farm",
+    "description": "Real farm environment with actual robot navigation data",
+    "status": "active"
+  },
+  "locations": [
+    {
+      "_comment": "before pose: [-0.01, 2.9, 1.571], new pose: [-0.21006, 3.43969, 2.959]",
+      "name": "Dock_Station",
+      "type": "dock",
+      "position": [
+        -0.25651,
+        3.38470,
+        3.00869
+
+      ],
+      "description": "Main docking station for robot charging and initialization",
+      "status": "available",
+      "connected_to": [
+        "Door",
+        "Stem_01",
+        "Stem_02"
+      ]
+    },
+    {
+      "name": "Door",
+      "type": "waypoint",
+      "position": [
+        -2.6,
+        -0.41,
+        3.142
+      ],
+      "description": "Entrance/exit point for the farm area",
+      "status": "available",
+      "connected_to": [
+        "Dock_Station",
+        "Stem_01",
+        "Stem_02"
+      ]
+    },
+    {
+      "_comment": "before pose: [-0.1651, 0.0630, -0.0473], new pose: [-0.285923443305, 0.0373283540107, -0.013945]",
+      "name": "Stem_01",
+      "type": "stem",
+      "position": [
+        -0.45887,
+        -0.18552,
+        0.01269
+      ],
+      "description": "First tomato stem location for harvesting",
+      "status": "available",
+      "connected_to": [
+        "Dock_Station",
+        "Door",
+        "Stem_02"
+      ]
+    },
+    {
+      "_comment": "before pose: [0.3651, 0.0.01985, -0.1447], new pose: [0.418928557427, 0.231870750237, -0.409]",
+      "name": "Stem_02",
+      "type": "stem",
+      "position": [
+        0.32062,
+        -0.02869,
+        0.03177
+      ],
+      "description": "Second tomato stem location for harvesting",
+      "status": "available",
+      "connected_to": [
+        "Dock_Station",
+        "Door",
+        "Stem_01"
+      ]
+    }
+  ]
+}
