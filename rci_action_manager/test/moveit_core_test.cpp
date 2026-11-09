@@ -1,5 +1,8 @@
 #include "rci_action_manager/controller/moveit_optimal_controller.hpp"
 #include <iostream>
+#include <pinocchio/algorithm/frames.hpp>
+#include <pinocchio/algorithm/kinematics.hpp>
+#include <pinocchio/spatial/explog.hpp>
 #include <stdexcept>
 extern "C" void allocation_guard_start();
 extern "C" unsigned long allocation_guard_stop();
@@ -284,5 +287,120 @@ int main(int argc,char **argv) {
             std::cout<<"retimed duration="<<corner.duration<<" reference_jerk/limit="<<reference_jerk<<" peak_command_jerk="<<peak_jerk
                      <<" allocations="<<allocations<<std::endl;
         }
+
+        // [BRL_lab] Push during geometric tracking with K=0 (hold) admittance. The
+        // intentional offset must not stall the path clock when admittance_aware_progress
+        // is set; the path finishes with the offset kept (default off keeps old behavior).
+        for(bool aware: {false,true}) {
+            Parameters q=p;
+            q.admittance_enabled=true;q.tracking_admittance=true;q.hold_mode=true;
+            q.tracking_stiffness.setZero();q.holding_stiffness.setZero();
+            q.geometric_tracking=true;q.path_retiming=false;q.acceleration_limits=false;q.torque_limits=false;
+            q.path_stall_timeout=15;q.admittance_aware_progress=aware;  // lab/field value
+            Controller pushed(q);joints.v.fill(0);wrench.value.fill(0);
+            for(int i=0;i<10;++i) {
+                joints.stamp=wrench.stamp=now;
+                pushed.joint_input.store(joints);pushed.wrench_input.store(wrench);pushed.step(now);now+=.01;
+            }
+            slot=pushed.acquirePlan();auto &line=pushed.plan(slot);
+            Sample a,b;a.q=Eigen::Map<const Vec>(joints.q.data());b=a;b.q(0)+=.3;
+            line.first=a;line.last=b;line.duration=3;line.start_time=now;line.id=6+aware;
+            line.segments.push_back(Segment::make(0,3,a,b));
+            require(line.buildPath(),"Push-test path build");pushed.submitPlan(slot);
+            Result result=Result::NONE;double peak_offset=0;
+            double path_end_q0=0;
+            for(int i=0;i<3000 && result==Result::NONE;++i) {
+                joints.stamp=wrench.stamp=now;
+                wrench.value.fill(0);
+                if(i>=60 && i<120) wrench.value[1]=6;  // push sideways for 0.6 s, then release
+                pushed.joint_input.store(joints);pushed.wrench_input.store(wrench);pushed.step(now);
+                require(pushed.output.load(status) && status.command_valid,"Push-test step failed");
+                for(int j=0;j<6;++j) peak_offset=std::max(peak_offset,std::abs(status.displacement[j]));
+                result=status.result;
+                if(i<=400) path_end_q0=joints.q[0]-a.q(0);  // joint0 progress up to 4 s (plan: +0.3 rad in 3 s)
+                joints.q=status.command;joints.v=status.velocity;now+=.01;
+            }
+            std::cout<<"push_during_tracking aware="<<aware<<" result="<<static_cast<int>(result)
+                     <<" reason="<<static_cast<int>(status.reason)<<" t="<<now
+                     <<" peak_displacement="<<peak_offset<<" joint0_progress_at_4s="<<path_end_q0<<std::endl;
+            if(aware) {
+                require(path_end_q0>.28,"Path clock stalled while pushed despite admittance_aware_progress");
+                require(result==Result::SUCCEEDED,"Pushed geometric path did not finish with admittance_aware_progress");
+            }
+        }
+    }
+    // [BRL_lab] Cartesian servo on the mobile model (graps_link): converge on a streamed
+    // target under the speed cap, brake and hold when the stream ends, refuse far targets,
+    // no allocation in the servo step. Perfect tracking (joints = command).
+    if(argc==2) {
+        const std::string urdf=std::string(argv[1]);
+        Parameters p; p.urdf=urdf.substr(0,urdf.rfind('/'))+"/mobile_manipulator.urdf"; p.position_margin=0;
+        p.joint_names={"ur5e_shoulder_pan_joint","ur5e_shoulder_lift_joint","ur5e_elbow_joint",
+            "ur5e_wrist_1_joint","ur5e_wrist_2_joint","ur5e_wrist_3_joint"};
+        p.lower=Vec::Constant(-6.283185307179586); p.upper=-p.lower;
+        p.velocity.setConstant(.4); p.acceleration.setConstant(.8); p.effort<<150,150,150,28,28,28;
+        p.admittance_enabled=false; p.geometric_tracking=true;
+        Controller servo(p);
+        require(servo.servoAvailable(),"graps_link missing from the mobile arm model");
+        auto robot=std::make_shared<holistic_controller::robot::RobotWrapper>(p.urdf,std::vector<std::string>{});
+        const pinocchio::Model model=armModel(robot->model(),p.joint_names);
+        pinocchio::Data data(model);
+        const auto frame=model.getFrameId("graps_link");
+        auto grasp=[&](const std::array<double,6> &q) {
+            pinocchio::forwardKinematics(model,data,Eigen::Map<const Vec>(q.data()));
+            pinocchio::updateFramePlacement(model,data,frame);return data.oMf[frame];
+        };
+        JointState joints; joints.valid=true;
+        joints.q={-2.50,-2.05,-0.99,3.10,-5.61,1.52};  // pre-pick branch of the lab tomato
+        Wrench wrench; wrench.ready=true;
+        double now=1; Snapshot status;
+        for(int i=0;i<10;++i) {
+            joints.stamp=wrench.stamp=now;servo.joint_input.store(joints);servo.wrench_input.store(wrench);servo.step(now);now+=.01;
+        }
+        const pinocchio::SE3 start=grasp(joints.q);
+        const Eigen::Vector3d goal=start.translation()+Eigen::Vector3d(.03,-.08,.02);
+        const Eigen::Quaterniond orientation(start.rotation());
+        ServoTarget target; target.valid=true; target.id=101;
+        target.pose={goal.x(),goal.y(),goal.z(),orientation.x(),orientation.y(),orientation.z(),orientation.w()};
+        double peak_speed=0; unsigned long allocations=0; bool servoing=false;
+        Eigen::Vector3d previous=start.translation();
+        for(int i=0;i<600;++i) {  // 6 s of streaming at 100 Hz
+            target.stamp=now; servo.servo_input.store(target);
+            joints.stamp=wrench.stamp=now;servo.joint_input.store(joints);servo.wrench_input.store(wrench);
+            allocation_guard_start(); servo.step(now); allocations+=allocation_guard_stop();
+            require(servo.output.load(status) && status.command_valid,"Servo step failed");
+            servoing=servoing || status.state==moveit_optimal::State::SERVOING;
+            joints.q=status.command;joints.v=status.velocity;now+=.01;
+            const Eigen::Vector3d position=grasp(joints.q).translation();
+            peak_speed=std::max(peak_speed,(position-previous).norm()/.01);previous=position;
+        }
+        const pinocchio::SE3 reached=grasp(joints.q);
+        const double position_error=(reached.translation()-goal).norm();
+        const double rotation_error=pinocchio::log3(Eigen::Matrix3d(reached.rotation()*start.rotation().transpose())).norm();
+        // Stream ends: brake, hold, report SERVO_ENDED for this id.
+        for(int i=0;i<100;++i) {
+            joints.stamp=wrench.stamp=now;servo.joint_input.store(joints);servo.wrench_input.store(wrench);servo.step(now);
+            require(servo.output.load(status),"Servo end step failed");joints.q=status.command;now+=.01;
+        }
+        const bool ended=status.state==moveit_optimal::State::HOLDING && status.result==Result::SUCCEEDED &&
+                         status.reason==Reason::SERVO_ENDED && status.result_id==101;
+        const double drift=(grasp(joints.q).translation()-goal).norm();
+        // A target far from the servo start aborts the session without moving.
+        ServoTarget far=target; far.id=102; far.pose[0]+=.5;
+        for(int i=0;i<5;++i) {
+            far.stamp=now;servo.servo_input.store(far);
+            joints.stamp=wrench.stamp=now;servo.joint_input.store(joints);servo.wrench_input.store(wrench);servo.step(now);
+            require(servo.output.load(status),"Servo workspace step failed");joints.q=status.command;now+=.01;
+        }
+        const bool refused=status.result==Result::ABORTED && status.reason==Reason::SERVO_WORKSPACE && status.result_id==102;
+        std::cout<<"servo servoing="<<servoing<<" position_error="<<position_error<<" rotation_error="<<rotation_error
+                 <<" peak_speed="<<peak_speed<<" ended="<<ended<<" hold_drift="<<drift<<" workspace_refused="<<refused
+                 <<" allocations="<<allocations<<std::endl;
+        require(servoing,"Servo session did not start");
+        require(position_error<.002 && rotation_error<.005,"Servo did not converge to the target");
+        require(peak_speed<.05*1.05,"Servo exceeded servo_linear_speed");
+        require(ended && drift<.003,"Servo did not end and hold after the stream stopped");
+        require(refused,"Servo accepted a target beyond servo_max_travel");
+        require(allocations==0,"Dynamic allocation in the servo step");
     }
 }

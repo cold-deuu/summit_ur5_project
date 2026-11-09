@@ -7,6 +7,7 @@
 #include <sensor_msgs/JointState.h>
 #include <geometry_msgs/WrenchStamped.h>
 #include <trajectory_msgs/JointTrajectory.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <std_srvs/Trigger.h>
 #include <std_srvs/SetBool.h>
 #include <functional>
@@ -33,7 +34,7 @@ private:
     Parameters loadParameters();
     Parameters params_;
     std::unique_ptr<Controller> controller_;
-    ros::Subscriber trajectory_sub_;
+    ros::Subscriber trajectory_sub_,servo_sub_;
     ros::Publisher status_pub_,telemetry_pub_,command_timing_pub_;
     std::chrono::steady_clock::time_point last_command_wall_;
     bool have_command_time_=false;
@@ -48,8 +49,14 @@ private:
     int bias_samples_=100,bias_count_=0;
     Vec bias_=Vec::Zero(),bias_sum_=Vec::Zero();
     std::mutex bias_mutex_;
-    uint64_t next_id_=0,last_command_sequence_=0;
+    std::atomic<uint64_t> next_id_{0}; // trajectory + servo callbacks (AsyncSpinner(2))
+    uint64_t last_command_sequence_=0;
     void receiveTrajectory(const trajectory_msgs::JointTrajectory::ConstPtr&);
+    // [BRL_lab] ~servo_enabled: PoseStamped targets for servo_frame in ~servo_reference_frame
+    void receiveServo(const geometry_msgs::PoseStamped::ConstPtr&);
+    std::string servo_reference_frame_;
+    double last_servo_receive_=-1;
+    uint64_t servo_stream_id_=0;
     void publish(const ros::WallTimerEvent&);
     bool setMode(rci_action_manager::SetAdmittanceMode::Request&,rci_action_manager::SetAdmittanceMode::Response&);
     bool zeroBias(std_srvs::Trigger::Request&,std_srvs::Trigger::Response&);

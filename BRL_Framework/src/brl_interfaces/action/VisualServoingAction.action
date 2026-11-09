@@ -1,0 +1,15 @@
+# VisualServoingAction
+# Visual Servoing 실행 (카메라 피드백 기반 접근)
+# motion_planning의 visual_servoing.py에서 처리
+
+# Goal
+bool on                  # Visual Servoing 시작/종료
+
+---
+# Result
+bool success             # 성공 여부
+string message           # 결과 메시지
+
+---
+# Feedback
+float32 distance_to_target  # 목표까지 거리 (m)

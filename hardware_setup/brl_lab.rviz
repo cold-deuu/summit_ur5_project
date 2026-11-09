@@ -1,0 +1,93 @@
+Panels:
+  - Class: rviz/Displays
+    Name: Displays
+  - Class: rviz/Views
+    Name: Views
+  - Class: brl_lab_rviz_panel/BrlActionPanel
+    Name: BRL Actions
+    ActionNamespace: /brl_robot
+    RobotName: brl_robot
+    StatusTopic: /moveit_optimal_controller/status
+    ConfirmBeforeSend: true
+    StartPoseDeg: 90, -33, -140, -33, 87, -88
+Visualization Manager:
+  Class: ""
+  Global Options:
+    Fixed Frame: summit_xl_base_footprint
+  Displays:
+    - Class: rviz/Grid
+      Name: Grid
+      Enabled: true
+    - Class: rviz/RobotModel
+      Name: Robot
+      Enabled: true
+      Robot Description: robot_description
+    # Path planned by the panel's "Go to BRL start pose" (shown before you confirm).
+    - Class: moveit_rviz_plugin/Trajectory
+      Name: Start pose preview
+      Enabled: true
+      Robot Description: robot_description
+      Trajectory Topic: /brl_lab/start_pose_preview
+      # Play the preview once, no trail.
+      Loop Animation: false
+      Show Trail: false
+    # Wrist D435 (BRL camera2): raw view and the BRL detector's YOLO overlay.
+    - Class: rviz/Image
+      Name: Wrist camera
+      Enabled: true
+      Image Topic: /brl_robot/camera2/color/image_raw
+      Transport Hint: raw
+      Normalize Range: true
+      Queue Size: 2
+    - Class: rviz/Image
+      Name: Wrist camera (YOLO)
+      Enabled: true
+      Image Topic: /brl_robot/yolo_detection/camera2_image_annotated_raw
+      Transport Hint: raw
+      Normalize Range: true
+      Queue Size: 2
+    - Class: moveit_rviz_plugin/MotionPlanning
+      Name: MotionPlanning
+      Enabled: true
+      Robot Description: robot_description
+      Planning Group: manipulator
+      # BRL planner plans also arrive here; show each once, no trail/loop.
+      Planned Path:
+        Loop Animation: false
+        Show Trail: false
+        Show Robot Visual: true
+        State Display Time: 0.05 s
+        Trajectory Topic: /move_group/display_planned_path
+  # Without a Tools list RViz has no Interact/MoveCamera tool, so the mouse
+  # cannot orbit/pan/zoom the view or drag MoveIt markers.
+  Tools:
+    - Class: rviz/Interact
+      Hide Inactive Objects: true
+    - Class: rviz/MoveCamera
+    - Class: rviz/Select
+    - Class: rviz/FocusCamera
+    - Class: rviz/Measure
+  Views:
+    Current:
+      Class: rviz/Orbit
+      Name: Current View
+      Target Frame: ur5e_base_link
+      Focal Point:
+        X: 0
+        Y: 0
+        Z: 0.4
+      Distance: 2.5
+      Pitch: 0.5
+      Yaw: 0.8
+      Near Clip Distance: 0.01
+      Value: Orbit (rviz)
+    Saved: ~
+Window Geometry:
+  Hide Left Dock: false
+  Hide Right Dock: false
+  Displays:
+    collapsed: false
+  Views:
+    collapsed: false
+  BRL Actions:
+    collapsed: false

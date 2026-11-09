@@ -1,0 +1,70 @@
+<launch>
+  <!-- BRL Pick pipeline in MuJoCo (same flow as the lab): base-pick -> pre-pick (pose goal)
+       -> visual servoing on the wrist camera (YOLO, 2 cm Cartesian steps through HQP)
+       -> grip -> post-pick.
+       = brl_hqp_sim.launch (MuJoCo + HQP + planning-only move_group) with the tomato scene
+       + robot_base_footprint (BRL pick frame; identity to summit_xl_base_footprint)
+       + simulated wrist camera2 (brl_sim_wrist_camera.py, hand_camera_link mount)
+       + BRL perception (knowledge graph, sensor node/YOLO, fixed AMCL pose; brl_lab_vision.launch)
+       + BRL motion planner with the lab [BRL_lab] switches; servo:=hqp (default) runs the HQP servo
+         (brl_hqp_servo.py: YOLO bbox + wrist depth -> tomato 3D -> streamed graps_link target)
+       + RViz with the BRL panel (Pick Tomato; default goal = lab tomato 0.771 -0.133 0.994,
+         the sim tomato sits 1.5 cm +x / 1.0 cm -z from it, see brl_pick_sim_scene.xml).
+       The sim gripper is rigid (no finger joints), so "grip" only publishes the command.
+       Do not run together with the lab bringup on the same ROS master. -->
+  <arg name="headless" default="false"/>
+  <arg name="rviz" default="true"/>
+  <!-- servo: hqp = visual servoing solved by HQP (brl_hqp_servo.py -> /rci_action_manager/servo_target,
+       moveit_optimal servo_enabled); brl = the original BRL step servo (visual_servoing.py). -->
+  <arg name="servo" default="hqp"/>
+  <arg name="hqp_servo" value="$(eval servo == 'hqp')"/>
+  <param if="$(arg hqp_servo)" name="/moveit_optimal_controller/servo_enabled" value="true"/>
+  <arg name="model_file" default="$(find summit_ur5e_moveit_config)/config/brl_pick_sim_scene.xml"/>
+  <!-- distro libccd: /usr/local/lib/libccd.so.2 on this PC gives wrong FCL distances and crashes RViz -->
+  <arg name="ccd_preload" default="$(optenv MOVEIT_CCD_PRELOAD /lib/x86_64-linux-gnu/libccd.so.2)"/>
+
+  <!-- Lab arm ranges (+-360 deg, elbow +-160) for MoveIt and HQP; the sim URDF has +-180.
+       The command runs while this file is parsed, so the file exists before the include reads it. -->
+  <arg name="urdf" default="$(env HOME)/.ros/brl_pick_sim/mobile_manipulator_lab_limits.urdf"/>
+  <param name="brl_pick_sim/urdf" command="$(find summit_ur5e_moveit_config)/scripts/make_brl_pick_sim_urdf.py $(arg urdf)"/>
+
+  <include file="$(find rci_action_manager)/launch/brl_hqp_sim.launch">
+    <arg name="headless" value="$(arg headless)"/>
+    <arg name="model_file" value="$(arg model_file)"/>
+    <arg name="urdf" value="$(arg urdf)"/>
+    <env name="LD_PRELOAD" value="$(arg ccd_preload)"/>
+  </include>
+
+  <!-- Lab OMPL collision-check step (brl_lab_ompl_planning.yaml). brl_sim's 0.05 (sized for BRL's
+       point-count filter, bypassed here by ignore_max_points) skips collisions over the +-360 deg
+       ranges: RRTConnect returns paths through the summit/basket that MoveIt then rejects as
+       "Computed path is not valid", and BRL does not retry a failed plan. -->
+  <param name="/move_group/manipulator/longest_valid_segment_fraction" value="0.005"/>
+
+  <node pkg="tf2_ros" type="static_transform_publisher" name="brl_robot_base_footprint"
+        args="0 0 0 0 0 0 summit_xl_base_footprint robot_base_footprint"/>
+
+  <node pkg="rci_action_manager" type="brl_sim_wrist_camera.py" name="brl_sim_wrist_camera" output="screen">
+    <param name="model_file" value="$(arg model_file)"/>
+  </node>
+
+  <include file="$(find summit_ur5_hardware_setup)/brl_lab_vision.launch">
+    <arg name="wrist_camera" value="false"/>
+  </include>
+
+  <node pkg="motion_planning" type="motion_planner_node.py" name="motion_planner_node" output="screen">
+    <env name="LD_PRELOAD" value="$(arg ccd_preload)"/>
+    <!-- hqp_joint_names: BRL default (ur5e_*) = sim HQP names -->
+    <param name="ignore_max_points" value="true"/>
+    <param name="enable_visual_servoing" value="$(eval servo != 'hqp')"/>
+    <param name="hqp_visual_servoing" value="$(arg hqp_servo)"/>
+    <param name="cartesian_via_hqp" value="true"/>
+    <param name="normalize_pose_goals" value="true"/>
+  </node>
+  <node if="$(arg hqp_servo)" pkg="summit_ur5_hardware_setup" type="brl_hqp_servo.py" name="brl_hqp_servo" output="screen"/>
+
+  <node if="$(arg rviz)" pkg="rviz" type="rviz" name="moveit_rviz" output="screen"
+        args="-d $(find summit_ur5_hardware_setup)/brl_lab.rviz">
+    <env name="LD_PRELOAD" value="$(arg ccd_preload)"/>
+  </node>
+</launch>

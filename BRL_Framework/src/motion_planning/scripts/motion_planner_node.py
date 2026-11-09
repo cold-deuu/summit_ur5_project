@@ -33,8 +33,8 @@ from brl_interfaces.msg import (
     PickTomatoAction, PickTomatoFeedback, PickTomatoResult,
     ScanTomatoAction, ScanTomatoFeedback, ScanTomatoResult,
     PlaceTomatoAction, PlaceTomatoFeedback, PlaceTomatoResult,
-    # [HQP] Visual servoing temporarily disabled
-    # VisualServoingActionAction, VisualServoingActionFeedback, VisualServoingActionResult
+    # [BRL_lab] re-enabled import (VisualServoingAction.action added to brl_interfaces)
+    VisualServoingActionAction, VisualServoingActionFeedback, VisualServoingActionResult
 )
 
 from motion_planning import MotionPlanner, VisualServoing
@@ -80,19 +80,23 @@ class MotionPlannerNode:
             self.gripper_status_topic, GripperStat, self.gripper_status_cb,
             queue_size=1)
 
-        # [HQP] Visual servoing temporarily disabled
-        # # VisualServoing initialization (uses planner.move_cartesian directly)
-        # self.vs = VisualServoing(
-        #     robot_name,
-        #     self.gripper_pub,
-        #     self.planner.move_cartesian  # Direct method reference
-        # )
-        #
-        # # Detection Subscriber (for visual servoing)
-        # rospy.Subscriber(
-        #     "/brl_robot/yolo_detection/camera2_best_target",
-        #     Detection2D,
-        #     self.detection_callback)
+        # [BRL_lab] Visual servoing behind ~enable_visual_servoing (default False = [HQP] disabled as before)
+        self.enable_visual_servoing = bool(rospy.get_param("~enable_visual_servoing", False))
+        self.vs = None
+        self.vs_server = None
+        if self.enable_visual_servoing:
+            # VisualServoing initialization (uses planner.move_cartesian directly)
+            self.vs = VisualServoing(
+                robot_name,
+                self.gripper_pub,
+                self.planner.move_cartesian  # Direct method reference
+            )
+
+            # Detection Subscriber (for visual servoing)
+            rospy.Subscriber(
+                "/brl_robot/yolo_detection/camera2_best_target",
+                Detection2D,
+                self.detection_callback)
 
 
         # ==================== Action Servers ====================
@@ -117,14 +121,14 @@ class MotionPlannerNode:
             self.prepare_navigation_cb, False)
         self.prepare_nav_server.start()
 
-        # [HQP] Visual servoing temporarily disabled
-        # # Visual Servoing Action
-        # self.vs_server = actionlib.SimpleActionServer(
-        #     "/brl_robot/visual_servoing_action",
-        #     VisualServoingActionAction,
-        #     self.visual_servoing_cb,
-        #     auto_start=False)
-        # self.vs_server.start()
+        # [BRL_lab] Visual Servoing Action (only with ~enable_visual_servoing)
+        if self.enable_visual_servoing:
+            self.vs_server = actionlib.SimpleActionServer(
+                "/brl_robot/visual_servoing_action",
+                VisualServoingActionAction,
+                self.visual_servoing_cb,
+                auto_start=False)
+            self.vs_server.start()
 
         rospy.loginfo("[MotionPlannerNode] Ready - robot: %s" % robot_name)
 
@@ -137,7 +141,8 @@ class MotionPlannerNode:
         Args:
             msg: Detection2D message
         """
-        self.vs.update_detection(msg)
+        if self.vs is not None:  # [BRL_lab] add guard
+            self.vs.update_detection(msg)
 
     def gripper_status_cb(self, message):
         """Store the latest Robotiq status message."""
@@ -183,55 +188,56 @@ class MotionPlannerNode:
             rate.sleep()
         return None, last_status, len(positions)
 
-    # [HQP] Visual servoing temporarily disabled
-    # # ==================== Visual Servoing Action ====================
-    #
-    # def visual_servoing_cb(self, goal):
-    #     """Visual Servoing Action callback"""
-    #     rospy.loginfo("[VisualServoing] Action started")
-    #
-    #     # Reset state machine
-    #     self.vs.reset()
-    #
-    #     feedback = VisualServoingActionFeedback()
-    #     result = VisualServoingActionResult()
-    #
-    #     # Main loop
-    #     rate = rospy.Rate(30)  # 30Hz
-    #     max_step = 15
-    #
-    #     # while not rospy.is_shutdown() and not self.vs.is_done():
-    #     for step in range(max_step):
-    #         if rospy.is_shutdown() and self.vs.is_done():
-    #             break
-    #
-    #         # Preempt check
-    #         if self.vs_server.is_preempt_requested():
-    #             rospy.loginfo("[VisualServoing] Preempted")
-    #             self.vs.cleanup()
-    #             self.vs_server.set_preempted()
-    #             return
-    #
-    #         # Publish feedback
-    #         feedback.state = self.vs.state
-    #         self.vs_server.publish_feedback(feedback)
-    #
-    #         # State machine step
-    #         self.vs.step()
-    #
-    #         time.sleep(0.75) 
-    #         #rate.sleep()
-    #
-    #     # Completion
-    #     self.vs.cleanup()
-    #     result.success = self.vs.is_done()
-    #
-    #     if result.success:
-    #         rospy.loginfo("[VisualServoing] Action succeeded")
-    #         self.vs_server.set_succeeded(result)
-    #     else:
-    #         rospy.logwarn("[VisualServoing] Action failed")
-    #         self.vs_server.set_aborted(result)
+    # [BRL_lab] re-enabled (was "[HQP] Visual servoing temporarily disabled")
+    # ==================== Visual Servoing Action ====================
+
+    def visual_servoing_cb(self, goal):
+        """Visual Servoing Action callback"""
+        rospy.loginfo("[VisualServoing] Action started")
+
+        # Reset state machine
+        self.vs.reset()
+
+        feedback = VisualServoingActionFeedback()
+        result = VisualServoingActionResult()
+
+        # Main loop
+        rate = rospy.Rate(30)  # 30Hz
+        max_step = 15
+
+        # while not rospy.is_shutdown() and not self.vs.is_done():
+        for step in range(max_step):
+            if rospy.is_shutdown() and self.vs.is_done():
+                break
+
+            # Preempt check
+            if self.vs_server.is_preempt_requested():
+                rospy.loginfo("[VisualServoing] Preempted")
+                self.vs.cleanup()
+                self.vs_server.set_preempted()
+                return
+
+            # Publish feedback
+            # [BRL_lab] action Feedback has distance_to_target (no "state" field); state is logged instead
+            rospy.logdebug("[VisualServoing] state %s" % self.vs.state)
+            self.vs_server.publish_feedback(feedback)
+
+            # State machine step
+            self.vs.step()
+
+            time.sleep(0.75) 
+            #rate.sleep()
+
+        # Completion
+        self.vs.cleanup()
+        result.success = self.vs.is_done()
+
+        if result.success:
+            rospy.loginfo("[VisualServoing] Action succeeded")
+            self.vs_server.set_succeeded(result)
+        else:
+            rospy.logwarn("[VisualServoing] Action failed")
+            self.vs_server.set_aborted(result)
 
     # ==================== Manipulation Actions ====================
 
@@ -253,10 +259,8 @@ class MotionPlannerNode:
         # Call MotionPlanner logic (uses internal visual servoing)
         success, message = self.planner.pick_tomato(
             tomato_position=goal.tomato_position,
-            # vs_instance=self.vs,  # [HQP] Visual servoing temporarily disabled
-            # vs_server=self.vs_server,
-            vs_instance=None,
-            vs_server=None,
+            vs_instance=self.vs,  # [BRL_lab] None unless ~enable_visual_servoing
+            vs_server=self.vs_server,
             gripper_pub=self.gripper_pub,
             feedback_cb=feedback_cb,
             preempt_check_cb=preempt_check_cb

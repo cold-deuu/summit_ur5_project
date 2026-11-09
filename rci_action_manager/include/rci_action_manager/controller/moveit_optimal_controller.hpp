@@ -40,13 +40,18 @@ public:
     }
 };
 
-enum class State { HOLDING, TRACKING };
+// SERVOING: [BRL_lab] streamed Cartesian target (servo_enabled), see Controller::servoReference.
+enum class State { HOLDING, TRACKING, SERVOING };
 enum class Result { NONE, SUCCEEDED, REJECTED, ABORTED };
 enum class Reason { NONE, GOAL_REACHED, INVALID_NAMES, INVALID_POINTS, INVALID_TIME,
     START_MISMATCH, STALE_STAMP, BUSY, REPLACED, PATH_TOLERANCE, GOAL_TOLERANCE,
-    STATE_TIMEOUT, FT_TIMEOUT, QP_FAILURE, JOINT_LIMIT, NOT_READY, INVALID_LIMITS, DRIVER_NOT_READY, COMMAND_GAP };
+    STATE_TIMEOUT, FT_TIMEOUT, QP_FAILURE, JOINT_LIMIT, NOT_READY, INVALID_LIMITS, DRIVER_NOT_READY, COMMAND_GAP,
+    SERVO_ENDED, SERVO_WORKSPACE };
 const char *reasonText(Reason);
 struct JointState { std::array<double,6> q{}, v{}; double stamp=0; bool valid=false; };
+// [BRL_lab] Servo target for servo_frame in the model root frame: x y z qx qy qz qw.
+// One id per uninterrupted stream; stamp = receive time (ros::Time, same clock as step()).
+struct ServoTarget { std::array<double,7> pose{}; double stamp=0; uint64_t id=0; bool valid=false; };
 struct Wrench { std::array<double,6> value{}; double stamp=0; bool ready=false; };
 struct Snapshot {
     std::array<double,6> actual{},desired{},command{},velocity{},error{},displacement{},admittance_velocity{};
@@ -116,6 +121,9 @@ struct Parameters {
     bool torque_limits=false,tracking_admittance=true,hold_mode=false;
     bool admittance_enabled=true;
     bool geometric_tracking=false;
+    // [BRL_lab] Judge path progress/goal on q minus the admittance joint offset, so an
+    // intentional push during tracking does not stall the path clock (default off = field).
+    bool admittance_aware_progress=false;
     bool acceleration_limits=true;
     double path_lookahead=.03,path_search_window=.12,path_stall_timeout=15;
     double path_speed=.5,path_acceleration=2,path_jerk=10;
@@ -134,6 +142,14 @@ struct Parameters {
     Eigen::Vector3d sensor_offset=Eigen::Vector3d::Zero();
     Eigen::Matrix3d sensor_rotation=Eigen::Matrix3d::Identity();
     double wrench_sign=-1;
+    // [BRL_lab] Cartesian servo (used only when targets arrive; the topic node subscribes
+    // only with ~servo_enabled). The reference posture moves by damped differential IK of
+    // servo_frame toward the latest target: twist = gain * pose error, norm-clamped to the
+    // speeds, rate-limited by the accelerations, then the usual HQP joint tracking follows it.
+    std::string servo_frame="graps_link";
+    double servo_gain=1.5,servo_linear_speed=.05,servo_angular_speed=.2;
+    double servo_linear_acceleration=.2,servo_angular_acceleration=.8;
+    double servo_timeout=.3,servo_damping=.01,servo_max_travel=.25;
 };
 class Controller {
 public:
@@ -142,6 +158,8 @@ public:
     AtomicValue<JointState> joint_input;
     AtomicValue<Wrench> wrench_input;
     AtomicValue<Snapshot> output;
+    AtomicValue<ServoTarget> servo_input; // [BRL_lab] single writer: topic node servo callback
+    bool servoAvailable() const { return servo_available_; }
     std::atomic<bool> hold_mode,tracking_admittance;
     std::atomic<bool> driver_running{true};
     std::atomic<double> driver_scale{1.0},driver_scaling_stamp{0.0};
@@ -172,8 +190,20 @@ private:
     size_t error_count_=0;
     std::shared_ptr<holistic_controller::robot::RobotWrapper> robot_;
     pinocchio::Model model_;
-    pinocchio::Data actual_data_,nominal_data_,reference_data_;
+    pinocchio::Data actual_data_,nominal_data_,reference_data_,servo_data_;
     pinocchio::JointIndex wrist_;
+    // [BRL_lab] servo session state (RT thread only)
+    bool servo_available_=false,servo_active_=false;
+    pinocchio::FrameIndex servo_frame_=0;
+    uint64_t servo_id_=0;
+    ServoTarget servo_;
+    Eigen::Vector3d servo_origin_=Eigen::Vector3d::Zero();
+    Vec servo_twist_=Vec::Zero();
+    Mat servo_jacobian_=Mat::Zero();
+    void startServo(const ServoTarget&,double now);
+    void servoReference(double now,double scale);
+    void endServo(Result,Reason);
+    void abortMotion(Reason);
     chanhqp::data::HQPData hqp_;
     chanhqp::task::TaskJointPostureEquality task_;
     holistic_controller::admittance::CartesianAdmittance admittance_;

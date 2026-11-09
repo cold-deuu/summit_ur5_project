@@ -1,0 +1,26 @@
+<launch>
+  <!-- BRL_lab: wrist D435 as BRL "camera2" (hand-eye). BRL expects
+       /brl_robot/camera2/color/image_raw (RGB only; visual servoing uses 2D bboxes).
+       Needs: sudo apt install ros-noetic-realsense2-camera
+       Set serial_no when two D435 are connected (rs-enumerate-devices -s). -->
+  <arg name="serial_no" default=""/>
+  <arg name="width" default="640"/>
+  <arg name="height" default="480"/>
+  <arg name="fps" default="30"/>
+  <group ns="brl_robot">
+    <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+      <arg name="camera" value="camera2"/>
+      <arg name="tf_prefix" value="camera2"/>
+      <arg name="serial_no" value="$(arg serial_no)"/>
+      <arg name="enable_color" value="true"/>
+      <arg name="color_width" value="$(arg width)"/>
+      <arg name="color_height" value="$(arg height)"/>
+      <arg name="color_fps" value="$(arg fps)"/>
+      <arg name="enable_depth" value="false"/>
+      <arg name="enable_infra1" value="false"/>
+      <arg name="enable_infra2" value="false"/>
+      <arg name="enable_gyro" value="false"/>
+      <arg name="enable_accel" value="false"/>
+    </include>
+  </group>
+</launch>

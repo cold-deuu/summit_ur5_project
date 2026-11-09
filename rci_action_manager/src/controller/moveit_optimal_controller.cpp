@@ -4,6 +4,8 @@
 #include <pinocchio/algorithm/joint-configuration.hpp>
 #include <pinocchio/algorithm/crba.hpp>
 #include <pinocchio/algorithm/rnea.hpp>
+#include <pinocchio/algorithm/frames.hpp>
+#include <pinocchio/spatial/explog.hpp>
 #include <stdexcept>
 #include <algorithm>
 #include <limits>
@@ -36,6 +38,8 @@ const char *reasonText(Reason r) {
     REASON(DRIVER_NOT_READY,"External Control inactive, scaling stale or speed zero")
     REASON(COMMAND_GAP,"latched fault: command-to-measured joint gap exceeded")
     REASON(INVALID_LIMITS,"trajectory exceeds configured position, velocity or acceleration bounds")
+    REASON(SERVO_ENDED,"servo target stream ended; holding the last reference")
+    REASON(SERVO_WORKSPACE,"servo target beyond servo_max_travel from the servo start")
 #undef REASON
     }
     return "unknown";
@@ -186,7 +190,7 @@ double PathClock::advance(double target,double dt,double bandwidth) {
 Controller::Controller(const Parameters &p)
  : hold_mode(p.hold_mode),tracking_admittance(p.tracking_admittance),p_(p),dt_(1/p.rate),
    robot_(std::make_shared<holistic_controller::robot::RobotWrapper>(p.urdf,std::vector<std::string>{})),
-   model_(armModel(robot_->model(),p.joint_names)),actual_data_(model_),nominal_data_(model_),reference_data_(model_),task_("topic_joint_tracking")
+   model_(armModel(robot_->model(),p.joint_names)),actual_data_(model_),nominal_data_(model_),reference_data_(model_),servo_data_(model_),task_("topic_joint_tracking")
 {
     if(model_.nq!=6 || model_.nv!=6) throw std::invalid_argument("Topic controller requires a fixed-base six-joint model");
     for(int i=0;i<6;++i) {
@@ -197,6 +201,8 @@ Controller::Controller(const Parameters &p)
     wrist_=model_.getJointId(p.wrist_joint);
     if(wrist_==0 || wrist_>=model_.joints.size())
         throw std::invalid_argument("Configured wrist_joint missing from arm model");
+    // [BRL_lab] servo frame is optional: without it servo targets are ignored.
+    if(model_.existFrame(p.servo_frame)) { servo_frame_=model_.getFrameId(p.servo_frame); servo_available_=true; }
     hqp_.prepareJointTracking(p.regularization); task_.Kp(p.kp);
     admittance_.parameters=p.admittance;
     for(int i=0;i<3;++i) { slots_[i].store(0); plans_[i].segments.reserve(p.max_points); }
@@ -223,6 +229,74 @@ void Controller::finish(Result result,Reason reason) {
     if(active_>=0) slots_[active_].store(0);
     active_=-1; started_=false;
 }
+void Controller::abortMotion(Reason reason) {
+    if(active_>=0) finish(Result::ABORTED,reason);
+    if(servo_active_) endServo(Result::ABORTED,reason);
+}
+// [BRL_lab] Cartesian servo. Starts from the current reference like a plan handover:
+// fold the admittance joint offset into the reference so the command stays continuous.
+void Controller::startServo(const ServoTarget &target,double now) {
+    nominal_.q+=joint_offset_;nominal_.v+=offset_velocity_;nominal_.a.setZero();
+    admittance_.displacement.setZero();admittance_.rotation.setIdentity();
+    joint_offset_.setZero();
+    servo_active_=true;servo_id_=target.id;servo_=target;servo_twist_.setZero();
+    pinocchio::forwardKinematics(model_,servo_data_,nominal_.q);
+    pinocchio::updateFramePlacement(model_,servo_data_,servo_frame_);
+    servo_origin_=servo_data_.oMf[servo_frame_].translation();
+    status_.trajectory_id=target.id;status_.state=State::SERVOING;
+    start_=now;error_sum_=0;error_count_=0;status_.max_error=0;status_.rms=0;
+}
+void Controller::endServo(Result result,Reason reason) {
+    status_.result=result;status_.reason=reason;status_.result_id=servo_id_;
+    status_.state=State::HOLDING;
+    // End: hold the last reference. Abort: hold the compliant command, as finish() does.
+    hold_=result==Result::ABORTED ? Vec(command_-joint_offset_) : Vec(nominal_.q);
+    servo_active_=false;servo_twist_.setZero();
+}
+void Controller::servoReference(double now,double scale) {
+    ServoTarget latest;
+    if(servo_input.load(latest) && latest.valid && latest.id==servo_id_) servo_=latest;
+    const bool stale=now-servo_.stamp>p_.servo_timeout;
+    const Eigen::Vector3d target_position(servo_.pose[0],servo_.pose[1],servo_.pose[2]);
+    if(!stale && (target_position-servo_origin_).norm()>p_.servo_max_travel) {
+        endServo(Result::ABORTED,Reason::SERVO_WORKSPACE);
+        nominal_.q=hold_;nominal_.v.setZero();nominal_.a.setZero();return;
+    }
+    pinocchio::computeJointJacobians(model_,servo_data_,nominal_.q);
+    pinocchio::updateFramePlacement(model_,servo_data_,servo_frame_);
+    const pinocchio::SE3 &frame=servo_data_.oMf[servo_frame_];
+    Vec desired=Vec::Zero();
+    if(!stale) {
+        const Eigen::Quaterniond orientation=Eigen::Quaterniond(servo_.pose[6],servo_.pose[3],servo_.pose[4],servo_.pose[5]).normalized();
+        Eigen::Vector3d linear=p_.servo_gain*(target_position-frame.translation());
+        Eigen::Vector3d angular=p_.servo_gain*pinocchio::log3(Eigen::Matrix3d(orientation.toRotationMatrix()*frame.rotation().transpose()));
+        if(linear.norm()>p_.servo_linear_speed) linear*=p_.servo_linear_speed/linear.norm();
+        if(angular.norm()>p_.servo_angular_speed) angular*=p_.servo_angular_speed/angular.norm();
+        desired<<linear,angular;
+    }
+    // Rate-limit the commanded twist (also brakes smoothly when the stream ends).
+    Eigen::Vector3d dl=desired.head<3>()-servo_twist_.head<3>(),da=desired.tail<3>()-servo_twist_.tail<3>();
+    const double ml=p_.servo_linear_acceleration*dt_,ma=p_.servo_angular_acceleration*dt_;
+    if(dl.norm()>ml) dl*=ml/dl.norm();
+    if(da.norm()>ma) da*=ma/da.norm();
+    servo_twist_.head<3>()+=dl;servo_twist_.tail<3>()+=da;
+    if(stale && servo_twist_.norm()<1e-4) {
+        endServo(Result::SUCCEEDED,Reason::SERVO_ENDED);
+        nominal_.q=hold_;nominal_.v.setZero();nominal_.a.setZero();return;
+    }
+    servo_jacobian_.setZero();
+    pinocchio::getFrameJacobian(model_,servo_data_,servo_frame_,pinocchio::LOCAL_WORLD_ALIGNED,servo_jacobian_);
+    const Mat damped=servo_jacobian_*servo_jacobian_.transpose()+p_.servo_damping*p_.servo_damping*Mat::Identity();
+    Vec qdot=servo_jacobian_.transpose()*damped.ldlt().solve(servo_twist_);
+    double shrink=1;
+    for(int i=0;i<6;++i) if(std::abs(qdot(i))>p_.velocity(i)) shrink=std::min(shrink,p_.velocity(i)/std::abs(qdot(i)));
+    qdot*=shrink*scale;
+    const Vec next=(nominal_.q+qdot*dt_).cwiseMax(p_.lower+Vec::Constant(p_.position_margin))
+                                       .cwiseMin(p_.upper-Vec::Constant(p_.position_margin));
+    qdot=(next-nominal_.q)/dt_;
+    nominal_.a=(qdot-nominal_.v)/dt_;nominal_.v=qdot;nominal_.q=next;
+    status_.elapsed=now-start_;
+}
 void Controller::timing(double ms,bool missed) {
     status_.loop_max_ms=std::max(status_.loop_max_ms,ms);
     if(missed) ++status_.missed_deadlines;
@@ -245,24 +319,25 @@ void Controller::step(double now) {
     const bool fresh_state=now-joints_.stamp<p_.state_timeout;
     const bool fresh_ft=wrench_.ready && now-wrench_.stamp<p_.ft_timeout;
     if(!fresh_state || !fresh_ft) {
-        if(active_>=0) finish(Result::ABORTED,fresh_state ? Reason::FT_TIMEOUT:Reason::STATE_TIMEOUT);
+        abortMotion(fresh_state ? Reason::FT_TIMEOUT:Reason::STATE_TIMEOUT);
         status_.reason=wrench_.ready ? (fresh_state ? Reason::FT_TIMEOUT:Reason::STATE_TIMEOUT):Reason::NOT_READY;
         output.store(status_); return;
     }
     const double scale=p_.require_driver_ready?driver_scale.load():1.0;
     if(p_.require_driver_ready && (!driver_running.load() || scale<=0 ||
        now-driver_scaling_stamp.load()>p_.state_timeout)) {
-        if(active_>=0) finish(Result::ABORTED,Reason::DRIVER_NOT_READY);
+        abortMotion(Reason::DRIVER_NOT_READY);
         status_.reason=Reason::DRIVER_NOT_READY;output.store(status_);return;
     }
     if((q.array()<p_.lower.array()-.01).any() || (q.array()>p_.upper.array()+.01).any()) {
-        if(active_>=0) finish(Result::ABORTED,Reason::JOINT_LIMIT);
+        abortMotion(Reason::JOINT_LIMIT);
         status_.reason=Reason::JOINT_LIMIT;if(p_.latch_faults)fault_=Reason::JOINT_LIMIT; output.store(status_); return;
     }
     if(status_.result==Result::NONE) status_.reason=Reason::NONE;
     const int incoming=pending_.exchange(-1);
     if(incoming>=0) {
         if(active_>=0) finish(Result::ABORTED,Reason::REPLACED);
+        if(servo_active_) endServo(Result::ABORTED,Reason::REPLACED); // [BRL_lab] a plan replaces the servo
         // The new plan starts at the measured, already compliant posture.
         // Rebase accumulated displacement instead of adding the old HOLD
         // offset a second time. Preserve physical admittance velocity and
@@ -293,7 +368,18 @@ void Controller::step(double now) {
         status_.result=Result::REJECTED; status_.reason=static_cast<Reason>(rejected);
         status_.result_id=rejected_id_.load();
     }
-    if(active_>=0 && now>=start_) {
+    // [BRL_lab] A servo stream with a new id starts a session (a plan in the same cycle wins).
+    if(servo_available_ && incoming<0) {
+        ServoTarget target;
+        if(servo_input.load(target) && target.valid && target.id!=servo_id_ && now-target.stamp<p_.servo_timeout) {
+            if(active_>=0) finish(Result::ABORTED,Reason::REPLACED);
+            if(servo_active_) endServo(Result::ABORTED,Reason::REPLACED);
+            startServo(target,now);
+        }
+    }
+    if(servo_active_) {
+        servoReference(now,scale);
+    } else if(active_>=0 && now>=start_) {
         Plan &plan=plans_[active_];
         if(p_.geometric_tracking) {
             if(!started_) {
@@ -305,7 +391,11 @@ void Controller::step(double now) {
                 nominal_=blend_.sample(path_handover_elapsed_);
                 nominal_.v*=scale;nominal_.a*=scale*scale;
             } else {
-                plan.follow(q,path_progress_,p_.path_lookahead,p_.path_search_window);
+                // [BRL_lab] with admittance_aware_progress, measure progress/lag on the robot
+                // position minus the intentional admittance offset (commanded = nominal + offset).
+                const bool offset_aware=p_.admittance_aware_progress && p_.admittance_enabled && tracking_admittance.load();
+                const Vec q_path=offset_aware ? Vec(q-joint_offset_) : q;
+                plan.follow(q_path,path_progress_,p_.path_lookahead,p_.path_search_window);
                 if(!plan.timed && !path_cruise_started_) {
                     path_reference_.startCruise(plan.duration*plan.parameter_scale,
                         p_.path_speed,p_.path_acceleration,p_.path_jerk);
@@ -314,7 +404,7 @@ void Controller::step(double now) {
                 // Do not stop at every projection/lookahead point. The measured
                 // lag only slows a smooth path clock; the real endpoint is the
                 // sole zero-velocity target of the S-curve.
-                const double lag=(nominal_.q-q).norm();
+                const double lag=(nominal_.q-q_path).norm();
                 const double following=std::max(0.0,std::min(1.0,(2*p_.path_lookahead-lag)/p_.path_lookahead));
                 const double increment=path_clock_.advance(scale*following,dt_,p_.path_clock_bandwidth);
                 if(plan.timed) {
@@ -366,7 +456,7 @@ void Controller::step(double now) {
     const Eigen::Vector3d force=p_.sensor_rotation*filtered.head<3>();
     const Eigen::Vector3d torque=p_.sensor_rotation*filtered.tail<3>()+p_.sensor_offset.cross(force);
     world.head<3>()=R*force; world.tail<3>()=R*torque;
-    const bool tracking=active_>=0;
+    const bool tracking=active_>=0 || servo_active_;
     admittance_.parameters.stiffness=tracking ? p_.tracking_stiffness :
         (hold_mode.load() ? Vec::Zero():p_.holding_stiffness);
     if(!p_.admittance_enabled || (tracking && !tracking_admittance.load())) {
@@ -415,14 +505,19 @@ void Controller::step(double now) {
         status_.rms=std::sqrt(error_sum_/error_count_);
         status_.max_error=std::max(status_.max_error,path_error);
         if(path_error>p_.path_tolerance) {
-            finish(Result::ABORTED,Reason::PATH_TOLERANCE);
+            abortMotion(Reason::PATH_TOLERANCE);
             nominal_.q=hold_; nominal_.v.setZero(); nominal_.a.setZero();
+        } else if(active_<0) {
+            // [BRL_lab] servo: no goal/stall checks; the stream end or the client stops it.
         } else if(started_ && (p_.geometric_tracking ?
                   (plans_[active_].timed ? path_time_>=plans_[active_].duration :
                    (path_reference_.position>=plans_[active_].duration*plans_[active_].parameter_scale-1e-9 &&
                     std::abs(path_reference_.velocity)<1e-8)) :
                   plan_elapsed_>=plans_[active_].duration)) {
-            if(status_.nominal_error<p_.goal_tolerance &&
+            // [BRL_lab] offset-aware goal: compare with the commanded nominal + offset
+            const double goal_error=(p_.admittance_aware_progress && p_.admittance_enabled && tracking_admittance.load())
+                ? path_error : status_.nominal_error;
+            if(goal_error<p_.goal_tolerance &&
                v.cwiseAbs().maxCoeff()<p_.goal_velocity_tolerance) {
                 hold_=plans_[active_].last.q;
                 finish(Result::SUCCEEDED,Reason::GOAL_REACHED);
@@ -454,14 +549,14 @@ void Controller::step(double now) {
     }
     if(!hqp_.solveJointTracking(target,lower,upper,mass_,nonlinear,
                                previous_velocity_,p_.effort,dt_,p_.torque_limits,result)) {
-        if(active_>=0) finish(Result::ABORTED,Reason::QP_FAILURE);
+        abortMotion(Reason::QP_FAILURE);
         if(p_.latch_faults)fault_=Reason::QP_FAILURE;
         status_.reason=Reason::QP_FAILURE;
         output.store(status_); return;
     }
     const Vec next=command_+result*dt_;
     if((next-q).cwiseAbs().maxCoeff()>p_.max_command_gap) {
-        if(active_>=0)finish(Result::ABORTED,Reason::COMMAND_GAP);
+        abortMotion(Reason::COMMAND_GAP);
         status_.reason=Reason::COMMAND_GAP;
         if(p_.latch_faults)fault_=Reason::COMMAND_GAP;
         output.store(status_);return;

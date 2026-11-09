@@ -1,0 +1,5 @@
+<library path="lib/libbrl_lab_rviz_panel">
+  <class name="brl_lab_rviz_panel/BrlActionPanel" type="brl_lab_rviz_panel::BrlActionPanel" base_class_type="rviz::Panel">
+    <description>Send BRL motion planner actions (prepare navigation, scan, pick, place) and show HQP status.</description>
+  </class>
+</library>

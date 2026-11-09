@@ -37,11 +37,13 @@ Parameters TopicNode::loadParameters() {
     PARAM(transition_duration); PARAM(state_timeout); PARAM(ft_timeout); PARAM(position_margin);
     PARAM(torque_limits); PARAM(tracking_admittance);PARAM(admittance_enabled);PARAM(require_driver_ready);PARAM(limit_joint_admittance);PARAM(latch_faults);
     PARAM(admittance_joint_velocity);PARAM(admittance_joint_acceleration);PARAM(holding_reference_lag);PARAM(max_command_gap);
-    PARAM(geometric_tracking);PARAM(path_lookahead);PARAM(path_search_window);PARAM(path_stall_timeout);
+    PARAM(geometric_tracking);PARAM(admittance_aware_progress);PARAM(path_lookahead);PARAM(path_search_window);PARAM(path_stall_timeout);
     PARAM(path_speed);PARAM(path_acceleration);PARAM(path_jerk);
     PARAM(path_clock_bandwidth);
     PARAM(path_retiming);PARAM(retiming_velocity_scale);PARAM(retiming_acceleration_scale);PARAM(retiming_jerk_scale);PARAM(retiming_sample_period);
     PARAM(acceleration_limits);
+    PARAM(servo_frame);PARAM(servo_gain);PARAM(servo_linear_speed);PARAM(servo_angular_speed);
+    PARAM(servo_linear_acceleration);PARAM(servo_angular_acceleration);PARAM(servo_timeout);PARAM(servo_damping);PARAM(servo_max_travel);
 #undef PARAM
     int max_points=5000; private_nh.param("max_points",max_points,max_points); p.max_points=max_points;
     std::string mode; private_nh.param<std::string>("admittance_mode",mode,"spring");
@@ -112,7 +114,9 @@ Parameters TopicNode::loadParameters() {
         !(p.retiming_velocity_scale>0 && p.retiming_velocity_scale<=1) ||
         !(p.retiming_acceleration_scale>0 && p.retiming_acceleration_scale<=1) ||
         !(p.retiming_jerk_scale>0 && p.retiming_jerk_scale<=1) ||
-        !(p.retiming_sample_period>0 && std::isfinite(p.retiming_sample_period)))
+        !(p.retiming_sample_period>0 && std::isfinite(p.retiming_sample_period)) ||
+        !(p.servo_gain>0 && p.servo_linear_speed>0 && p.servo_angular_speed>0 && p.servo_linear_acceleration>0 &&
+          p.servo_angular_acceleration>0 && p.servo_timeout>0 && p.servo_damping>0 && p.servo_max_travel>0))
         throw std::invalid_argument("Invalid controller configuration");
     return p;
 }
@@ -129,6 +133,14 @@ TopicNode::TopicNode() : private_nh("~") {
     if(telemetry_enabled)telemetry_pub_=private_nh.advertise<rci_action_manager::ControlTelemetry>("telemetry",5);
     std::string topic; private_nh.param<std::string>("trajectory_topic",topic,"/rci_action_manager/moveit_plan");
     trajectory_sub_=nh.subscribe(topic,2,&TopicNode::receiveTrajectory,this);
+    bool servo_enabled=false;private_nh.param("servo_enabled",servo_enabled,false);
+    if(servo_enabled) {
+        if(!controller_->servoAvailable()) throw std::invalid_argument("servo_enabled but servo_frame "+params_.servo_frame+" is not in the arm model");
+        std::string servo_topic;private_nh.param<std::string>("servo_topic",servo_topic,"/rci_action_manager/servo_target");
+        private_nh.param<std::string>("servo_reference_frame",servo_reference_frame_,"summit_xl_base_footprint");
+        servo_sub_=nh.subscribe(servo_topic,5,&TopicNode::receiveServo,this);
+        ROS_INFO_STREAM("[BRL_lab] servo enabled: "<<servo_topic<<" ("<<params_.servo_frame<<" in "<<servo_reference_frame_<<")");
+    }
     status_pub_=private_nh.advertise<rci_action_manager::MoveitOptimalStatus>("status",1,true);
     command_timing_pub_=private_nh.advertise<std_msgs::Float64MultiArray>("command_timing",10);
     mode_service_=private_nh.advertiseService("set_admittance_mode",&TopicNode::setMode,this);
@@ -180,6 +192,23 @@ void TopicNode::receiveWrench(const Vec &raw,double stamp,const std::string &fra
     for(int i=0;i<6;++i) input.value[i]=corrected(i);
     input.ready=!calibrating_;
     controller_->wrench_input.store(input);
+}
+void TopicNode::receiveServo(const geometry_msgs::PoseStamped::ConstPtr &msg) {
+    if(!msg->header.frame_id.empty() && msg->header.frame_id!=servo_reference_frame_) {
+        ROS_WARN_THROTTLE(1,"Rejected servo target in frame %s (expected %s)",msg->header.frame_id.c_str(),servo_reference_frame_.c_str());return;
+    }
+    const auto &p=msg->pose.position;const auto &o=msg->pose.orientation;
+    const double norm=std::sqrt(o.x*o.x+o.y*o.y+o.z*o.z+o.w*o.w);
+    if(!std::isfinite(p.x+p.y+p.z) || !std::isfinite(norm) || norm<.5) {ROS_WARN_THROTTLE(1,"Rejected nonfinite servo target");return;}
+    const double now=ros::Time::now().toSec();
+    Snapshot current;const bool known=snapshot(current);
+    // New id when the stream was interrupted or the controller is not servoing this stream.
+    if(last_servo_receive_<0 || now-last_servo_receive_>params_.servo_timeout ||
+       (known && current.state!=State::SERVOING && current.result_id==servo_stream_id_)) servo_stream_id_=++next_id_;
+    last_servo_receive_=now;
+    ServoTarget target;target.stamp=now;target.id=servo_stream_id_;target.valid=true;
+    target.pose={p.x,p.y,p.z,o.x/norm,o.y/norm,o.z/norm,o.w/norm};
+    controller_->servo_input.store(target);
 }
 void TopicNode::receiveTrajectory(const trajectory_msgs::JointTrajectory::ConstPtr &msg) {
     const uint64_t id=++next_id_;
@@ -308,7 +337,7 @@ void TopicNode::publish(const ros::WallTimerEvent&) {
     }
     rci_action_manager::MoveitOptimalStatus msg;
     msg.header.stamp=ros::Time(s.stamp);
-    msg.state=s.state==State::TRACKING?"TRACKING":"HOLDING";
+    msg.state=s.state==State::TRACKING?"TRACKING":(s.state==State::SERVOING?"SERVOING":"HOLDING");
     static const char *results[]={"NONE","SUCCEEDED","REJECTED","ABORTED"};
     msg.last_result=results[static_cast<int>(s.result)]; msg.reason=reasonText(s.reason);
     msg.trajectory_id=s.trajectory_id; msg.result_trajectory_id=s.result_id;
@@ -324,7 +353,7 @@ void TopicNode::publish(const ros::WallTimerEvent&) {
     status_pub_.publish(msg);
     if(telemetry_pub_ && s.telemetry_valid) {
         rci_action_manager::ControlTelemetry data;data.header=msg.header;data.header.frame_id=telemetry_frame_;
-        data.mode=s.state==State::TRACKING?"JOINT_TRAJECTORY":"HOLDING";data.action_id=s.trajectory_id;
+        data.mode=s.state==State::TRACKING?"JOINT_TRAJECTORY":(s.state==State::SERVOING?"SERVO":"HOLDING");data.action_id=s.trajectory_id;
         data.reason=(s.reason==Reason::GOAL_REACHED || s.reason==Reason::REPLACED)?"":reasonText(s.reason);data.command_enabled=command_enabled_;data.ft_bias_ready=s.bias_ready;
         data.fault_latched=s.reason==Reason::COMMAND_GAP || s.reason==Reason::QP_FAILURE || s.reason==Reason::JOINT_LIMIT;
         auto pose=[](const std::array<double,7> &value,geometry_msgs::Pose &out) {

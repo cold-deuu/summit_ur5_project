@@ -53,6 +53,14 @@ class MotionPlanner:
             "ur5e_shoulder_pan_joint", "ur5e_shoulder_lift_joint", "ur5e_elbow_joint",
             "ur5e_wrist_1_joint", "ur5e_wrist_2_joint", "ur5e_wrist_3_joint"])
         self.hqp_start_retry = int(rospy.get_param("~hqp_start_retry", 3))
+        # [BRL_lab] add: lab MoveIt config splits paths into more points; default False keeps BRL behavior
+        self.ignore_max_points = bool(rospy.get_param("~ignore_max_points", False))
+        # [BRL_lab] add: run visual-servoing Cartesian steps through HQP (default False = move_group.execute)
+        self.cartesian_via_hqp = bool(rospy.get_param("~cartesian_via_hqp", False))
+        # [BRL_lab] add: normalize pose-goal quaternions (pick pose |q|=0.9998 -> IK never converges in the goal sampler)
+        self.normalize_pose_goals = bool(rospy.get_param("~normalize_pose_goals", False))
+        # [BRL_lab] add: visual servoing solved by HQP (brl_hqp_servo.py action) instead of the step VS
+        self.hqp_visual_servoing = bool(rospy.get_param("~hqp_visual_servoing", False))
         self.hqp_status_lock = threading.Lock()
         self.hqp_status = None
         self.hqp_trajectory_pub = rospy.Publisher(
@@ -243,6 +251,11 @@ class MotionPlanner:
         Returns:
             (plan, success) tuple
         """
+        if self.normalize_pose_goals:  # [BRL_lab] add: same rotation, unit length
+            q = target_pose.pose.orientation if hasattr(target_pose, "pose") else target_pose.orientation
+            n = np.sqrt(q.x ** 2 + q.y ** 2 + q.z ** 2 + q.w ** 2)
+            if n > 0:
+                q.x, q.y, q.z, q.w = q.x / n, q.y / n, q.z / n, q.w / n
         self.move_group.set_pose_target(target_pose)
         plan = self.move_group.plan()
         if isinstance(plan, tuple):  # Noetic add: plan() -> (success, trajectory, planning_time, error_code)
@@ -287,7 +300,7 @@ class MotionPlanner:
                     point_count = len(plan.joint_trajectory.points)
                 except Exception:
                     point_count = 0
-                if point_count <= max_points:
+                if point_count <= max_points or self.ignore_max_points:  # [BRL_lab] add: or ignore_max_points
                     return plan, True
                 rospy.logwarn(
                     "[MotionPlanner] Plan has %d points (limit=%d); replanning"
@@ -565,6 +578,25 @@ class MotionPlanner:
             return False, True
         return self.execute_with_preempt(plan, preempt_check_cb)
 
+    def _run_hqp_visual_servoing(self, preempt_check_cb=None):  # [BRL_lab] add
+        """HQP visual servoing action (servo + gripper close); returns (success, message)."""
+        import actionlib
+        from brl_interfaces.msg import VisualServoingActionAction, VisualServoingActionGoal
+        client = actionlib.SimpleActionClient("/brl_robot/hqp_visual_servoing", VisualServoingActionAction)
+        if not client.wait_for_server(rospy.Duration(5.0)):
+            return False, "HQP visual servoing server not available"
+        client.send_goal(VisualServoingActionGoal(on=True))
+        while not client.wait_for_result(rospy.Duration(0.1)):
+            if preempt_check_cb and preempt_check_cb():
+                client.cancel_goal()
+                client.wait_for_result(rospy.Duration(5.0))
+                return False, "Preempted by client"
+            if rospy.is_shutdown():
+                return False, "shutdown"
+        result = client.get_result()
+        return (bool(result and result.success),
+                "HQP visual servoing: %s" % (result.message if result else "no result"))
+
     def stop(self):
         """Stop current execution"""
         self.move_group.stop()
@@ -635,11 +667,17 @@ class MotionPlanner:
             waypoints.append(target_pose)
 
             # Compute Cartesian path
-            (plan, fraction) = self.move_group.compute_cartesian_path(
-                waypoints,
-                0.005,  # eef_step (5mm resolution)
-                0.0     # jump_threshold
-            )
+            try:
+                (plan, fraction) = self.move_group.compute_cartesian_path(
+                    waypoints,
+                    0.005,  # eef_step (5mm resolution)
+                    0.0     # jump_threshold
+                )
+            except TypeError:
+                # [BRL_lab] add: MoveIt >= 1.1.14 Python API has no jump_threshold argument
+                # (0.0 lands on avoid_collisions:bool and raises). Same call without it:
+                # jump check off as before, avoid_collisions default True as before.
+                (plan, fraction) = self.move_group.compute_cartesian_path(waypoints, 0.005)
 
             # Remove first point (current position)
             if plan.joint_trajectory.points:
@@ -654,7 +692,10 @@ class MotionPlanner:
                 rospy.logwarn("[MotionPlanner] Cartesian path incomplete: %.2f" % fraction)
 
             # Execute
-            success = self.move_group.execute(plan, wait=True)
+            if self.cartesian_via_hqp:  # [BRL_lab] add: same HQP path as execute_with_preempt
+                success, _preempted, _reason = self._hqp_send_and_wait(plan.joint_trajectory)
+            else:
+                success = self.move_group.execute(plan, wait=True)
             if success:
                 return True, "Cartesian movement completed"
 
@@ -744,28 +785,36 @@ class MotionPlanner:
 
 
 
-        # [HQP] Visual servoing temporarily disabled
-        # # 2. Run Visual Servoing (directly using instance)
-        # rospy.loginfo("[DEBUG][MotionPlanner] Start to run Visual Servoing")
-        # vs_instance.reset()
-        #
-        # rate = rospy.Rate(30)  # 30Hz
-        # while not rospy.is_shutdown() and not vs_instance.is_done():
-        #     # Preempt check
-        #     if preempt_check_cb and preempt_check_cb():
-        #         vs_instance.cleanup()
-        #         rospy.loginfo("[MotionPlanner] Visual servoing cancelled by preempt")
-        #         return False, "Preempted by client"
-        #
-        #     # State machine step
-        #     vs_instance.step()
-        #     rate.sleep()
-        #
-        # vs_instance.cleanup()
-        #
-        # if not vs_instance.is_done():
-        #     rospy.logerr("[MotionPlanner] Visual servoing failed")
-        #     return False, "Visual servoing failed"
+        # [BRL_lab] re-enabled; skipped when vs_instance is None (default = [HQP] disabled as before)
+        if self.hqp_visual_servoing:  # [BRL_lab] add: HQP servo replaces the step VS below
+            rospy.loginfo("[MotionPlanner] Start HQP visual servoing")
+            success, message = self._run_hqp_visual_servoing(preempt_check_cb)
+            rospy.loginfo("[MotionPlanner] %s" % message)
+            if not success:
+                return False, message
+            vs_instance = None
+        if vs_instance is not None:
+            # 2. Run Visual Servoing (directly using instance)
+            rospy.loginfo("[DEBUG][MotionPlanner] Start to run Visual Servoing")
+            vs_instance.reset()
+
+            rate = rospy.Rate(30)  # 30Hz
+            while not rospy.is_shutdown() and not vs_instance.is_done():
+                # Preempt check
+                if preempt_check_cb and preempt_check_cb():
+                    vs_instance.cleanup()
+                    rospy.loginfo("[MotionPlanner] Visual servoing cancelled by preempt")
+                    return False, "Preempted by client"
+
+                # State machine step
+                vs_instance.step()
+                rate.sleep()
+
+            vs_instance.cleanup()
+
+            if not vs_instance.is_done():
+                rospy.logerr("[MotionPlanner] Visual servoing failed")
+                return False, "Visual servoing failed"
 
         if feedback_cb:
             feedback_cb(60, "Visual servoing succeeded, moving to post-pick")
@@ -1054,7 +1103,7 @@ class MotionPlanner:
 
             npts = self._traj_len(plan)
     
-            if npts > max_points:
+            if npts > max_points and not self.ignore_max_points:  # [BRL_lab] add: and not ignore_max_points
                 continue
             
             # ✅ acceptable plan

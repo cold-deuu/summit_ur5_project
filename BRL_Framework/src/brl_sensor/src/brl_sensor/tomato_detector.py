@@ -93,6 +93,9 @@ class TomatoDetector:
         self.confidence_threshold = 0.5
         self.toamto_conf_thredhold = 0.8
         self.min_confidence = 1.0
+        # [BRL_lab] add: extra confidence floor for camera2 (wrist, visual servoing) boxes only.
+        # Default = confidence_threshold (original behavior); the lab sets 0.8 against red-object false positives.
+        self.camera2_confidence_threshold = float(rospy.get_param("~camera2_confidence_threshold", self.confidence_threshold))
 
         # YOLO 시스템 초기화
         self.init_yolo_system()
@@ -372,6 +375,8 @@ class TomatoDetector:
                 with self.yolo_lock:
                     result = self.yolo_model.predict(image, verbose=False)[0]
                 for box in result.boxes:
+                    if float(box.conf[0]) < self.camera2_confidence_threshold:  # [BRL_lab] add
+                        continue
                     if self.filter_tomatoes(box, robot_position=None, image_shape=image.shape[:2]):
                         good_boxes.append(box)
                 rospy.loginfo_throttle(5, f"[Camera2] YOLO targets: {len(good_boxes)}")
