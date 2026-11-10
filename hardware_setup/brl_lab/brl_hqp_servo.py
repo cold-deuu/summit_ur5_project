@@ -69,6 +69,7 @@ class HqpServo:
         self.edge_correction = True
         self.lock = threading.Lock()
         self.detection = None
+        self.detection_rx = None
         self.depth = None
         self.info = None
         self.status = None
@@ -102,6 +103,8 @@ class HqpServo:
         def callback(msg):
             with self.lock:
                 setattr(self, name, msg)
+                # Receive time on this PC: freshness must not depend on the camera PC's clock.
+                setattr(self, name + "_rx", rospy.Time.now())
         return callback
 
     def _gripper(self, position):
@@ -207,14 +210,18 @@ class HqpServo:
             if (now - begin).to_sec() > self.max_duration:
                 return self._finish(False, "timeout after %.0f s" % self.max_duration)
             with self.lock:
-                det, depth, info, status = self.detection, self.depth, self.info, self.status
+                det, det_rx, depth, info, status = self.detection, self.detection_rx, self.depth, self.info, self.status
             if published and status is not None:
                 if my_stream is None and status.state == "SERVOING":
                     my_stream = status.trajectory_id
                 if my_stream is not None and status.result_trajectory_id == my_stream and status.last_result == "ABORTED":
                     return self._finish(False, "HQP aborted the servo: " + status.reason)
             fresh = (det is not None and det.valid and info is not None and
-                     (now - det.header.stamp).to_sec() < self.detection_timeout)
+                     (now - det_rx).to_sec() < self.detection_timeout)
+            if det is not None and abs((det_rx - det.header.stamp).to_sec()) > 0.5:
+                rospy.logwarn_throttle(5.0, "[hqp_servo] detection stamp %.2f s off this PC's clock "
+                                       "(network delay or unsynced clocks: sync with chrony)",
+                                       (det_rx - det.header.stamp).to_sec())
             if fresh:
                 point, source = self._measure(det, depth, info, estimate)
                 if point is not None:

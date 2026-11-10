@@ -22,6 +22,11 @@
          command="python3 $(dirname)/prepare_field_ur5e_model.py --full --output $(arg full_model_file)"/>
   <!-- HQP visual servoing: subscribe /rci_action_manager/servo_target (graps_link pose in the model frame). -->
   <arg name="servo" default="true"/>
+  <!-- The servo node runs here, next to HQP; only camera topics come from the robot PC.
+       depth_transport:=compressedDepth receives PNG-compressed depth (about 1/3 of raw) and
+       decodes it on this PC; use it on Wi-Fi. raw = the camera topic as is. -->
+  <arg name="depth_transport" default="raw"/>
+  <arg name="depth_topic" default="/brl_robot/camera2/aligned_depth_to_color/image_raw"/>
   <arg name="start_speed_scaling_controller" default="true"/>
   <arg name="record" default="true"/>
   <arg name="log_dir" default="$(env HOME)/catkin_ws/artifacts/moveit_field_logs"/>
@@ -81,6 +86,15 @@
     <remap from="/ur_hardware_interface/robot_program_running" to="$(arg arm_namespace)/ur_hardware_interface/robot_program_running"/>
     <remap from="/speed_scaling_factor" to="$(arg arm_namespace)/speed_scaling_factor"/>
   </node>
+  <node if="$(eval arg('servo') and arg('depth_transport') == 'compressedDepth')" pkg="image_transport"
+        type="republish" name="hqp_servo_depth_decompress" args="compressedDepth raw">
+    <remap from="in" to="$(arg depth_topic)"/>
+    <remap from="out" to="/hqp_servo/depth"/>
+  </node>
+  <node if="$(arg servo)" pkg="summit_ur5_hardware_setup" type="brl_hqp_servo.py" name="brl_hqp_servo" output="screen">
+    <param name="depth_topic" value="$(eval '/hqp_servo/depth' if arg('depth_transport') == 'compressedDepth' else arg('depth_topic'))"/>
+  </node>
+
   <node if="$(arg record)" pkg="rci_action_manager" type="log_action_telemetry.py" name="moveit_telemetry_logger" output="screen">
     <param name="controller_namespace" value="/moveit_optimal_controller"/>
     <param name="output_root" value="$(arg log_dir)"/>
