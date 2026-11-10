@@ -11,7 +11,17 @@
   <arg name="arm_velocity_limit" default="1.57"/>
   <arg name="acceleration_limits" default="false"/>
   <arg name="command_horizon" default="0.02"/>
+  <!-- full_model (default): the field robot's whole /brl_robot/robot_description, exported at launch
+       (needs the BRL bringup running). HQP locks every non-arm joint, as in the sim, and its model
+       frame = the URDF root (mobile base footprint). full_model:=false = arm-only model_file
+       (frame ur5e_base_link). Joint tracking is identical; poses/servo targets change frame. -->
+  <arg name="full_model" default="true"/>
+  <arg name="full_model_file" default="$(env HOME)/.ros/brl_field/field_full.urdf"/>
   <arg name="model_file" default="$(dirname)/field/ur5e_arm.urdf"/>
+  <param if="$(arg full_model)" name="/brl_field/full_model_export"
+         command="python3 $(dirname)/prepare_field_ur5e_model.py --full --output $(arg full_model_file)"/>
+  <!-- HQP visual servoing: subscribe /rci_action_manager/servo_target (graps_link pose in the model frame). -->
+  <arg name="servo" default="true"/>
   <arg name="start_speed_scaling_controller" default="true"/>
   <arg name="record" default="true"/>
   <arg name="log_dir" default="$(env HOME)/catkin_ws/artifacts/moveit_field_logs"/>
@@ -41,7 +51,8 @@
     <rosparam command="load" file="$(find rci_action_manager)/config/ur5e_field_action.yaml"/>
     <rosparam command="load" file="$(find rci_action_manager)/config/ur5e_field_moveit.yaml"/>
     <rosparam param="joint_names">[ur5e_shoulder_pan_joint, ur5e_shoulder_lift_joint, ur5e_elbow_joint, ur5e_wrist_1_joint, ur5e_wrist_2_joint, ur5e_wrist_3_joint]</rosparam>
-    <param name="urdf" value="$(arg model_file)"/>
+    <param name="urdf" value="$(eval arg('full_model_file') if arg('full_model') else arg('model_file'))"/>
+    <param name="servo_enabled" value="$(arg servo)"/>
     <param name="wrist_joint" value="ur5e_wrist_3_joint"/>
     <param name="joint_state_topic" value="$(arg arm_namespace)/joint_states"/>
     <param name="wrench_topic" value="$(eval '/hqp_moveit/wrench_compensated' if arg('gravity_compensation') else '/hqp_moveit/wrench')"/>
@@ -49,7 +60,8 @@
     <param name="gravity_compensation/model_file" value="$(arg gravity_model_file)"/>
     <param name="wrench_frame" value="ur5e_wrist_3_link"/>
     <rosparam param="admittance/sensor_to_wrist_xyz">[0, 0, 0]</rosparam>
-    <param name="telemetry_frame" value="ur5e_base_link"/>
+    <!-- empty = the model root frame -->
+    <param name="telemetry_frame" value="$(eval '' if arg('full_model') else 'ur5e_base_link')"/>
     <param name="command_interface" value="trajectory"/>
     <param name="command_topic" value="$(arg arm_namespace)/ur5e_scaled_pos_joint_traj_controller/command"/>
     <param name="require_position_controller" value="false"/>

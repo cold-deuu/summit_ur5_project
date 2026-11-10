@@ -50,6 +50,9 @@ Parameters TopicNode::loadParameters() {
     if(mode!="spring" && mode!="hold") throw std::invalid_argument("admittance_mode must be spring or hold");
     p.hold_mode=mode=="hold";
     pinocchio::Model model; pinocchio::urdf::buildModel(p.urdf,model);
+    // URDF root link = the model frame (pose/servo coordinates): first body frame on the universe.
+    for(const auto &frame:model.frames)
+        if(frame.type==pinocchio::BODY && frame.parent==0) { model_root_=frame.name; break; }
     model=armModel(model,p.joint_names);
     if(model.nq!=6 || model.nv!=6) throw std::invalid_argument("Arm reduction must have exactly six actuated joints");
     p.lower=model.lowerPositionLimit; p.upper=model.upperPositionLimit;
@@ -129,7 +132,8 @@ TopicNode::TopicNode() : private_nh("~") {
     private_nh.param("command_enabled",command_enabled_,false);
     controller_.reset(new Controller(params_));
     bool telemetry_enabled;private_nh.param("telemetry_enabled",telemetry_enabled,false);
-    private_nh.param<std::string>("telemetry_frame",telemetry_frame_,"model_world");
+    private_nh.param<std::string>("telemetry_frame",telemetry_frame_,"");
+    if(telemetry_frame_.empty()) telemetry_frame_=model_root_.empty() ? "model_world" : model_root_;
     if(telemetry_enabled)telemetry_pub_=private_nh.advertise<rci_action_manager::ControlTelemetry>("telemetry",5);
     std::string topic; private_nh.param<std::string>("trajectory_topic",topic,"/rci_action_manager/moveit_plan");
     trajectory_sub_=nh.subscribe(topic,2,&TopicNode::receiveTrajectory,this);
@@ -137,7 +141,11 @@ TopicNode::TopicNode() : private_nh("~") {
     if(servo_enabled) {
         if(!controller_->servoAvailable()) throw std::invalid_argument("servo_enabled but servo_frame "+params_.servo_frame+" is not in the arm model");
         std::string servo_topic;private_nh.param<std::string>("servo_topic",servo_topic,"/rci_action_manager/servo_target");
-        private_nh.param<std::string>("servo_reference_frame",servo_reference_frame_,"summit_xl_base_footprint");
+        // Default: the model root (sim: summit_xl_base_footprint; field full model: its base footprint).
+        // Published back so brl_hqp_servo.py streams targets in the same frame.
+        private_nh.param<std::string>("servo_reference_frame",servo_reference_frame_,model_root_);
+        if(servo_reference_frame_.empty()) throw std::invalid_argument("servo_reference_frame unknown (no URDF root link)");
+        private_nh.setParam("servo_reference_frame",servo_reference_frame_);
         servo_sub_=nh.subscribe(servo_topic,5,&TopicNode::receiveServo,this);
         ROS_INFO_STREAM("[BRL_lab] servo enabled: "<<servo_topic<<" ("<<params_.servo_frame<<" in "<<servo_reference_frame_<<")");
     }

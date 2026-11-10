@@ -55,9 +55,21 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source-param', default='/brl_robot/robot_description')
     parser.add_argument('--output', type=Path, default=Path(__file__).resolve().parent/'field/ur5e_arm.urdf')
+    # --full: the whole field model unchanged (HQP locks every non-arm joint itself, as in the sim);
+    # its root link (the mobile base footprint) becomes the HQP model frame.
+    parser.add_argument('--full', action='store_true', help='export the whole field model, not only the arm')
     args = parser.parse_args(rospy.myargv()[1:])
     rospy.init_node('prepare_field_arm_model', anonymous=True)
     text = rospy.get_param(args.source_param)
+    if args.full:
+        root = ET.fromstring(text)
+        children = {node.find('child').get('link') for node in root.findall('joint')}
+        roots = [node.get('name') for node in root.findall('link') if node.get('name') not in children]
+        extract(text)  # same arm-chain check as the arm-only export
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(text)
+        print('Saved field full model (root %s): %s' % (','.join(roots), args.output))
+        return
     output = extract(text)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(output + '\n')

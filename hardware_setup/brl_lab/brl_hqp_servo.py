@@ -48,7 +48,7 @@ def matrix(transform):
 class HqpServo:
     def __init__(self):
         robot = rospy.get_param("~robot_name", "brl_robot")
-        self.base_frame = rospy.get_param("~base_frame", "summit_xl_base_footprint")
+        self.base_frame = self._base_frame()
         self.tool_frame = rospy.get_param("~tool_frame", "graps_link")
         self.diameter = float(rospy.get_param("~tomato_diameter", 0.066))
         self.standoff = float(rospy.get_param("~standoff", 0.10))
@@ -91,6 +91,12 @@ class HqpServo:
         self.server.start()
         rospy.loginfo("[hqp_servo] ready: /%s/hqp_visual_servoing (standoff %.3f m, %s in %s)",
                       robot, self.standoff, self.tool_frame, self.base_frame)
+
+    @staticmethod
+    def _base_frame():
+        # Default = the frame HQP takes servo targets in (its URDF root, published by the HQP node).
+        return rospy.get_param("~base_frame", rospy.get_param("/moveit_optimal_controller/servo_reference_frame",
+                                                              "summit_xl_base_footprint"))
 
     def _set(self, name):
         def callback(msg):
@@ -179,6 +185,7 @@ class HqpServo:
             self.server.set_succeeded(VisualServoingActionResult(success=True, message="off"))
             return
         self.edge_correction = bool(rospy.get_param("~edge_correction", True))  # read per goal (rosparam set)
+        self.base_frame = self._base_frame()  # HQP may start after this node
         self._gripper(self.grip_open)
         try:
             start_tool = self._tool()
@@ -214,11 +221,16 @@ class HqpServo:
                     if first is None:
                         first = estimate = point
                         rospy.loginfo("[hqp_servo] tomato at (%.3f %.3f %.3f) from %s", *point, source)
-                    elif np.linalg.norm(point - first) > self.max_offset:
-                        return self._finish(False, "estimate moved %.3f m from the first" % np.linalg.norm(point - first))
-                    elif np.linalg.norm(point - estimate) < self.max_jump:
+                        last_seen = now
+                    elif (np.linalg.norm(point - first) > self.max_offset or
+                          np.linalg.norm(point - estimate) >= self.max_jump):
+                        # Outlier (e.g. a partial box when the fruit fills the view close up):
+                        # keep the last estimate; the approach continues on it.
+                        rospy.logwarn_throttle(0.5, "[hqp_servo] rejected %s estimate %.3f m off (box %.0fx%.0f)",
+                                               source, np.linalg.norm(point - estimate), det.width, det.height)
+                    else:
                         estimate = (1 - self.alpha) * estimate + self.alpha * point
-                    last_seen = now
+                        last_seen = now
             if estimate is None:
                 if (now - begin).to_sec() > self.detection_timeout:
                     return self._finish(False, "no tomato detection")

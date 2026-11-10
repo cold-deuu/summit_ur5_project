@@ -54,7 +54,7 @@ private:
     void receiveTrajectory(const trajectory_msgs::JointTrajectory::ConstPtr&);
     // [BRL_lab] ~servo_enabled: PoseStamped targets for servo_frame in ~servo_reference_frame
     void receiveServo(const geometry_msgs::PoseStamped::ConstPtr&);
-    std::string servo_reference_frame_;
+    std::string servo_reference_frame_,model_root_;
     double last_servo_receive_=-1;
     uint64_t servo_stream_id_=0;
     void publish(const ros::WallTimerEvent&);
