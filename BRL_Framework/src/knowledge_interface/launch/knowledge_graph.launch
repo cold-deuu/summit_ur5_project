@@ -1,6 +1,0 @@
-<launch>
-    <arg name="environment_config" default="$(find knowledge_interface)/config/real_farm_config.json" />
-    <node pkg="knowledge_interface" type="knowledge_graph_node.py" name="knowledge_graph_node" output="screen">
-        <param name="environment_config" value="$(arg environment_config)" />
-    </node>
-</launch>

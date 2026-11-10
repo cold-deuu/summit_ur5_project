@@ -2,49 +2,12 @@
 <package format="2">
   <name>rci_action_manager</name>
   <version>0.0.0</version>
-  <description>UR5e/mobile manipulator HQP action and topic trajectory controllers.</description>
-
-  <maintainer email="leesai2000@khu.ac.kr">Leesai Park</maintainer>
-
-  <license>MIT</license>
-
+  <description>Message-only rci_action_manager for the BRL field PC: MoveitOptimalStatus for the BRL motion planner. Same package name as the HQP package so the ROS message type matches.</description>
+  <maintainer email="lee081847@gmail.com">cold-deuu</maintainer>
+  <license>BSD</license>
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>eigen</build_depend>
-
-  <depend>rci_holistic_controller</depend>
-  <depend>sca_pkg</depend>
-
-  <depend>roscpp</depend>
-  <depend>roslib</depend>
-  <depend>eiquadprog</depend>
-  <depend>pluginlib</depend>
-  <depend>geometry_msgs</depend>
-  <depend>sensor_msgs</depend>
-  <depend>nav_msgs</depend>
-  <depend>controller_manager_msgs</depend>
-  <depend>trajectory_msgs</depend>
-  <depend>controller_interface</depend>
-  <depend>std_msgs</depend>
-  <depend>actionlib</depend>
-  <depend>actionlib_msgs</depend>
-  <depend>pinocchio</depend>
-  <depend>tf_conversions</depend>
-  <depend>tf</depend>
-
   <build_depend>message_generation</build_depend>
+  <build_depend>std_msgs</build_depend>
   <exec_depend>message_runtime</exec_depend>
-  <depend>std_srvs</depend>
-  <exec_depend>rospy</exec_depend>
-  <exec_depend>mujoco_ros</exec_depend>
-  <exec_depend>summit_ur5e_moveit_config</exec_depend>
-  <exec_depend>python3-numpy</exec_depend>
-  <exec_depend>python3-matplotlib</exec_depend>
-  <exec_depend>python3-scipy</exec_depend>
-  <exec_depend>python3-yaml</exec_depend>
-  <exec_depend>python3-rospkg</exec_depend>
-  <exec_depend>controller_manager</exec_depend>
-  <exec_depend>ur_robot_driver</exec_depend>
-  <exec_depend>ur_dashboard_msgs</exec_depend>
-  <exec_depend>moveit_commander</exec_depend>
-
+  <exec_depend>std_msgs</exec_depend>
 </package>

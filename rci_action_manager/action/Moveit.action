@@ -1,8 +1,0 @@
-# Define the goal
-trajectory_msgs/JointTrajectory target_traj
----
-# Define the result
-bool is_completed
----
-# Define a feedback message
-float32 percent_complete

@@ -1,3 +1,0 @@
-# BRL MoveIt override, loaded after the common field action parameters.
-admittance:
-  damping: [50, 50, 50, 3, 3, 3]

@@ -1,8 +1,0 @@
-<launch>
-  <arg name="model_file"/>
-  <arg name="input_topic"/>
-  <arg name="output_topic"/>
-  <node pkg="summit_ur5_hardware_setup" type="ft_gravity.py" name="ft_gravity_compensator"
-        args="run --model &quot;$(arg model_file)&quot; --input $(arg input_topic) --output $(arg output_topic)"
-        output="screen" required="true"/>
-</launch>

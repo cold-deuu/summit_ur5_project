@@ -1,5 +1,0 @@
-# BRL_lab MoveIt override (copied from ur5e_field_moveit.yaml).
-admittance:
-  damping: [50, 50, 50, 3, 3, 3]
-# [BRL_lab] keep the path clock running while the tool is pushed during tracking
-admittance_aware_progress: true
