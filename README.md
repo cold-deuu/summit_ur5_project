@@ -23,6 +23,8 @@ Check: `rosmsg md5 rci_action_manager/MoveitOptimalStatus` gives the same result
 ```bash
 rosrun motion_planning motion_planner_node.py \
   _hqp_visual_servoing:=true _enable_visual_servoing:=false \
-  _cartesian_via_hqp:=true _ignore_max_points:=true _normalize_pose_goals:=true
+  _cartesian_via_hqp:=true _normalize_pose_goals:=true
 ```
-The HQP servo node (`brl_hqp_servo.py`, on the `field_comp` PC) must serve `/brl_robot/hqp_visual_servoing`.
+Leave `ignore_max_points` off here: BRL's point limits fit BRL's own MoveIt config.
+
+The HQP servo node (`brl_hqp_servo.py`) runs on the desktop with HQP (`field_comp`, `ur5e_moveit_field.launch`) and serves `/brl_robot/hqp_visual_servoing`.
