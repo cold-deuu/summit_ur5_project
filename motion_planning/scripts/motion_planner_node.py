@@ -80,8 +80,8 @@ class MotionPlannerNode:
             self.gripper_status_topic, GripperStat, self.gripper_status_cb,
             queue_size=1)
 
-        # [BRL_lab] Visual servoing behind ~enable_visual_servoing (default False = [HQP] disabled as before)
-        self.enable_visual_servoing = bool(rospy.get_param("~enable_visual_servoing", False))
+        # [BRL_lab] Visual servoing behind ~enable_visual_servoing (default True = original BRL: step VS in every Pick)
+        self.enable_visual_servoing = bool(rospy.get_param("~enable_visual_servoing", True))
         self.vs = None
         self.vs_server = None
         if self.enable_visual_servoing:

@@ -55,8 +55,9 @@ class MotionPlanner:
         self.hqp_start_retry = int(rospy.get_param("~hqp_start_retry", 3))
         # [BRL_lab] add: lab MoveIt config splits paths into more points; default False keeps BRL behavior
         self.ignore_max_points = bool(rospy.get_param("~ignore_max_points", False))
-        # [BRL_lab] add: run visual-servoing Cartesian steps through HQP (default False = move_group.execute)
-        self.cartesian_via_hqp = bool(rospy.get_param("~cartesian_via_hqp", False))
+        # [BRL_lab] add: run visual-servoing Cartesian steps through HQP like every other motion
+        # (default True; False = BRL move_group.execute, needs a move_group with execution)
+        self.cartesian_via_hqp = bool(rospy.get_param("~cartesian_via_hqp", True))
         # [BRL_lab] add: normalize pose-goal quaternions (pick pose |q|=0.9998 -> IK never converges in the goal sampler)
         self.normalize_pose_goals = bool(rospy.get_param("~normalize_pose_goals", False))
         # [BRL_lab] add: visual servoing solved by HQP (brl_hqp_servo.py action) instead of the step VS
