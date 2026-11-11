@@ -1,0 +1,48 @@
+# Copied verbatim from BRL field ur5_e_moveit_config (summit_packages_melodic-2.6.9, 2026-08-13).
+# joint_limits.yaml allows the dynamics properties specified in the URDF to be overwritten or augmented as needed
+# Specific joint properties can be changed with the keys [max_position, min_position, max_velocity, max_acceleration]
+# Joint limits can be turned off with [has_velocity_limits, has_acceleration_limits]
+joint_limits:
+  ur5e_shoulder_pan_joint:
+    has_velocity_limits: true
+    max_velocity: 3.14
+    has_acceleration_limits: true
+    max_acceleration: 3.14
+    min_position: 0
+    max_position: 3.6
+  ur5e_shoulder_lift_joint:
+    has_velocity_limits: true
+    max_velocity: 3.14
+    has_acceleration_limits: true
+    max_acceleration: 3.14
+    min_position: -3.14
+    max_position: 0
+  ur5e_elbow_joint:
+    has_velocity_limits: true
+    max_velocity: 3.14
+    has_acceleration_limits: true
+    max_acceleration: 3.14
+    min_position: -3.14
+    max_position: 1.6
+  ur5e_wrist_1_joint:
+    has_velocity_limits: true
+    max_velocity: 6.28
+    has_acceleration_limits: true
+    max_acceleration: 3.14
+    min_position: -3.14
+    max_position: 3.14
+  ur5e_wrist_2_joint:
+    has_velocity_limits: true
+    max_velocity: 6.28
+    has_acceleration_limits: true
+    max_acceleration: 3.14
+    min_position: -3.14
+    max_position: 3.14159
+  ur5e_wrist_3_joint:
+    has_velocity_limits: true
+    max_velocity: 6.28
+    has_acceleration_limits: true
+    max_acceleration: 3.14
+    min_position: -6.28
+    max_position: 6.28
+    

@@ -38,7 +38,7 @@ QDoubleSpinBox *coordinate() {
 QString yesNo(bool value) { return value ? "yes" : "<b style='color:#c62828'>no</b>"; }
 
 // F/T calibration poses [deg] (pan, lift, elbow, wrist1, wrist2, wrist3). Shoulder fixed at
-// pan 60 / lift -90 / elbow -90 (current elbow branch); only the wrist changes the tool
+// pan 60 (lab; field overrides via pan_deg) / lift -90 / elbow -90; only the wrist changes the tool
 // direction. Chosen from FK/collision checks: gravity in the sensor frame covers all axes
 // (fit condition ~1.2), tool0 0.49-0.73 m above the base, max 90 deg joint move per step.
 struct CalibrationPose { const char *label; const char *description; double joints[6]; };
@@ -65,6 +65,18 @@ const CalibrationPose kPoses[] = {
     {"S8", "툴 아래 · 손목3 +135°", {60, -90, -90, -90, 90, 135}},
     {"S9", "툴 아래 · 손목3 +180°", {60, -90, -90, -90, 90, 180}},
 };
+
+// Pan of every calibration pose [deg]. Pan turns about the vertical axis, so gravity in the
+// sensor frame is unchanged; the field launch faces the arm forward with pan_deg 180.
+// Shared with the server through /brl_lab_ft_calibration/pan_deg (default 60, lab).
+double calibrationJointDeg(int pose, int joint) {
+    if (joint == 0) {
+        double pan = kPoses[pose].joints[0];
+        ros::param::get("/brl_lab_ft_calibration/pan_deg", pan);
+        return pan;
+    }
+    return kPoses[pose].joints[joint];
+}
 }  // namespace
 
 BrlActionPanel::BrlActionPanel(QWidget *parent) : rviz::Panel(parent) {
@@ -163,7 +175,7 @@ BrlActionPanel::BrlActionPanel(QWidget *parent) : rviz::Panel(parent) {
         calibration_go_[i] = new QPushButton(QString("Go %1").arg(kPoses[i].label));
         calibration_record_[i] = new QPushButton("Record");
         auto *text = new QLabel(QString::fromUtf8(kPoses[i].description));
-        text->setToolTip(QString("%1, %2, %3, %4, %5, %6 deg").arg(kPoses[i].joints[0]).arg(kPoses[i].joints[1])
+        text->setToolTip(QString("%1, %2, %3, %4, %5, %6 deg").arg(calibrationJointDeg(i, 0)).arg(kPoses[i].joints[1])
                              .arg(kPoses[i].joints[2]).arg(kPoses[i].joints[3]).arg(kPoses[i].joints[4]).arg(kPoses[i].joints[5]));
         grid->addWidget(calibration_mark_[i], i, 0);
         grid->addWidget(calibration_go_[i], i, 1);
@@ -595,7 +607,7 @@ void BrlActionPanel::goCalibrationPose(int index) {
         return;
     }
     std::vector<double> goal;
-    for (double degrees : kPoses[index].joints) goal.push_back(degrees * M_PI / 180.0);
+    for (int j = 0; j < 6; ++j) goal.push_back(calibrationJointDeg(index, j) * M_PI / 180.0);
     moveToJoints(goal, std::string("Calibration ") + kPoses[index].label);
 }
 
@@ -615,7 +627,7 @@ void BrlActionPanel::recordCalibrationPose(int index) {
         double gap = 0;
         for (size_t j = 0; j < names.size() && j < 6; ++j) {
             auto found = current.find(names[j]);
-            gap = std::max(gap, found == current.end() ? 1e9 : std::abs(found->second - kPoses[index].joints[j] * M_PI / 180.0));
+            gap = std::max(gap, found == current.end() ? 1e9 : std::abs(found->second - calibrationJointDeg(index, static_cast<int>(j)) * M_PI / 180.0));
         }
         if (names.size() != 6 || gap > M_PI / 180.0) {
             QMessageBox::warning(this, "F/T calibration", QString("Robot is not at %1 (gap %2 deg). Press Go %1 first.")

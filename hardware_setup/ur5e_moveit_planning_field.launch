@@ -1,26 +1,77 @@
 <launch>
   <!-- Reuse BRL's live full-robot URDF, TF and joint states. Use live SRDF when
        present, otherwise validate the bundled field SRDF against the live URDF.
-       Planning only: execution goes through the HQP topic controller. -->
+       Planning only: execution goes through the HQP topic controller.
+       MoveIt settings default to BRL's field ur5_e_moveit_config (field/brl_moveit/):
+       KDL 0.005 s, joint position limits (pan 0..3.6, lift -3.14..0, elbow -3.14..1.6),
+       AddTimeParameterization, start_state_max_bounds_error 0.1,
+       longest_valid_segment_fraction 0.01. Pass brl_moveit:=false for the previous
+       summit_ur5e_moveit_config values. -->
   <arg name="robot_namespace" default="/brl_robot"/>
   <arg name="rviz" default="true"/>
+  <arg name="rviz_config" default="$(dirname)/brl_field.rviz"/>
+  <arg name="brl_moveit" default="true"/>
+  <arg name="brl_config" default="$(dirname)/field/brl_moveit"/>
+  <arg name="config_dir" value="$(arg brl_config)" if="$(arg brl_moveit)"/>
+  <arg name="config_dir" value="$(find summit_ur5e_moveit_config)/config" unless="$(arg brl_moveit)"/>
   <arg name="fallback_srdf" default="$(dirname)/field/ur5e_moveit.srdf"/>
   <arg name="ccd_preload" default="$(optenv MOVEIT_CCD_PRELOAD)"/>
   <group ns="$(arg robot_namespace)">
     <param name="robot_description_semantic"
            command="$(find summit_ur5_hardware_setup)/prepare_field_moveit_semantics.py --robot-namespace $(arg robot_namespace) --fallback-srdf &quot;$(arg fallback_srdf)&quot;"/>
-    <rosparam command="load" file="$(find summit_ur5e_moveit_config)/config/kinematics.yaml" ns="robot_description_kinematics"/>
-    <rosparam command="load" file="$(find summit_ur5e_moveit_config)/config/joint_limits.yaml" ns="robot_description_planning"/>
+    <rosparam command="load" file="$(arg config_dir)/kinematics.yaml" ns="robot_description_kinematics"/>
+    <rosparam command="load" file="$(arg config_dir)/joint_limits.yaml" ns="robot_description_planning"/>
+    <!-- BRL runs Melodic, whose MoveGroupCommander scales by 1.0; Noetic defaults to 0.1. -->
+    <group if="$(arg brl_moveit)" ns="robot_description_planning">
+      <param name="default_velocity_scaling_factor" value="1.0"/>
+      <param name="default_acceleration_scaling_factor" value="1.0"/>
+    </group>
     <node pkg="moveit_ros_move_group" type="move_group" name="move_group" output="screen">
       <env name="LD_PRELOAD" value="$(arg ccd_preload)"/>
-      <rosparam command="load" file="$(find summit_ur5e_moveit_config)/config/ompl_planning.yaml"/>
+      <rosparam command="load" file="$(arg config_dir)/ompl_planning.yaml"/>
       <param name="allow_trajectory_execution" value="false"/>
+      <param if="$(arg brl_moveit)" name="max_safe_path_cost" value="1"/>
+      <param if="$(arg brl_moveit)" name="jiggle_fraction" value="0.05"/>
       <param name="planning_scene_monitor/publish_planning_scene" value="true"/>
       <param name="planning_scene_monitor/publish_geometry_updates" value="true"/>
       <param name="planning_scene_monitor/publish_state_updates" value="true"/>
+      <param if="$(arg brl_moveit)" name="planning_scene_monitor/publish_transforms_updates" value="true"/>
       <remap from="joint_states" to="$(arg robot_namespace)/joint_states"/>
     </node>
-    <node if="$(arg rviz)" pkg="rviz" type="rviz" name="moveit_rviz"
-          args="-d $(find summit_ur5e_moveit_config)/config/moveit.rviz"/>
+    <!-- brl_field.rviz = brl_lab.rviz (RobotModel + MotionPlanning + "BRL Actions" panel)
+         with the field root frame and /brl_robot move_group. The panel reads /joint_states
+         and /plan_kinematic_path; in the field they live under /brl_robot. -->
+    <node if="$(arg rviz)" pkg="rviz" type="rviz" name="moveit_rviz" args="-d $(arg rviz_config)">
+      <env name="LD_PRELOAD" value="$(arg ccd_preload)"/>
+      <!-- Arm-only topic: the panel keeps just the latest JointState, and
+           $(arg robot_namespace)/joint_states interleaves wheel, arm and gripper messages. -->
+      <remap from="/joint_states" to="$(arg robot_namespace)/ur5e/joint_states"/>
+      <remap from="/plan_kinematic_path" to="$(arg robot_namespace)/plan_kinematic_path"/>
+    </node>
   </group>
+  <!-- F/T calibration services for the panel's "F/T calibration" buttons. The panel calls
+       /brl_lab_ft_calibration/*, so the node keeps that name (root namespace). It moves the arm
+       through its poses via HQP only when run_all/capture is pressed, and refuses to start
+       unless HQP runs with admittance_enabled:=false. -->
+  <arg name="ft_calibration" default="true"/>
+  <arg name="ft_output_root" default="$(env HOME)/catkin_ws/artifacts/ft_gravity"/>
+  <!-- Pan of all 19 poses. 180 = arm forward (robot_base_footprint +x), same pan as the field
+       home; the lab's 60 points the tool to the rear right, next to the rear lidar. -->
+  <arg name="ft_pan_deg" default="180"/>
+  <!-- Fit acceptance (held-out RMS). Lab 1.0 N / 0.08 Nm; two field runs gave 1.57 and 1.79 N. -->
+  <arg name="ft_fit_max_force" default="2.0"/>
+  <arg name="ft_fit_max_torque" default="0.2"/>
+  <node if="$(arg ft_calibration)" pkg="summit_ur5_hardware_setup" type="ft_calibration_server.py"
+        name="brl_lab_ft_calibration" output="screen">
+    <env name="LD_PRELOAD" value="$(arg ccd_preload)"/>
+    <param name="controller" value="/moveit_optimal_controller"/>
+    <param name="input" value="/hqp_moveit/wrench"/>
+    <param name="base_frame" value="ur5e_base_link"/>
+    <param name="wrench_frame" value="ur5e_wrist_3_link"/>
+    <param name="output_root" value="$(arg ft_output_root)"/>
+    <param name="pan_deg" value="$(arg ft_pan_deg)"/>
+    <param name="fit_max_force_N" value="$(arg ft_fit_max_force)"/>
+    <param name="fit_max_torque_Nm" value="$(arg ft_fit_max_torque)"/>
+    <remap from="/plan_kinematic_path" to="$(arg robot_namespace)/plan_kinematic_path"/>
+  </node>
 </launch>

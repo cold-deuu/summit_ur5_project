@@ -86,6 +86,15 @@ class CalibrationServer:
         self.run_thread = None
         self.stop_requested = threading.Event()
         self.settle = float(rospy.get_param('~settle_seconds', 2.0))
+        # Shoulder-pan angle of every pose (degrees). Pan turns about the vertical axis, so it
+        # does not change gravity in the sensor frame; the field faces the arm forward (180).
+        self.pan_deg = float(rospy.get_param('~pan_deg', 60.0))
+        self.poses = [(label, [self.pan_deg] + list(goal[1:])) for label, goal in POSES]
+        # Held-out residual limits for accepting a fit (lab 1.0 N / 0.08 Nm). The field UR5e
+        # sensor repeats only to ~1.6-1.8 N across 19 poses (2026-11-11), so the field launch
+        # raises them.
+        self.fit_max_force = float(rospy.get_param('~fit_max_force_N', 1.0))
+        self.fit_max_torque = float(rospy.get_param('~fit_max_torque_Nm', 0.08))
         rospy.Service('~run_all', Trigger, self.run_all)
         rospy.Service('~stop', Trigger, self.stop)
         rospy.Service('~new_dataset', Trigger, self.new_dataset)
@@ -219,7 +228,7 @@ class CalibrationServer:
         try:
             if rospy.get_param(self.controller + '/admittance_enabled', True):
                 raise ValueError('Admittance is ON. Restart HQP with admittance_enabled:=false')
-            model = ft_w3_model.fit(self.data, 1.0, 0.08)
+            model = ft_w3_model.fit(self.data, self.fit_max_force, self.fit_max_torque)
             path = self.dataset_path.parent / 'model.yaml'
             path.write_text(yaml.safe_dump(model, sort_keys=False))
             # HQP launches default to <root>/current/model.yaml: point it at this validated model.
@@ -333,13 +342,13 @@ class CalibrationServer:
             return
         try:
             folder = self.new_dataset(None).message
-            self._progress('RUNNING 0/%d: %s' % (len(POSES), folder))
-            for index, (label, goal) in enumerate(POSES):
+            self._progress('RUNNING 0/%d: %s' % (len(self.poses), folder))
+            for index, (label, goal) in enumerate(self.poses):
                 if self.stop_requested.is_set():
                     raise StopRun('Stopped by user')
-                self._progress('RUNNING %d/%d %s: moving' % (index + 1, len(POSES), label))
+                self._progress('RUNNING %d/%d %s: moving' % (index + 1, len(self.poses), label))
                 self._move(label, goal, names)
-                self._progress('RUNNING %d/%d %s: settling / recording' % (index + 1, len(POSES), label))
+                self._progress('RUNNING %d/%d %s: settling / recording' % (index + 1, len(self.poses), label))
                 for attempt in range(2):
                     time.sleep(self.settle if attempt == 0 else self.settle * 2)
                     if self.stop_requested.is_set():
@@ -351,7 +360,7 @@ class CalibrationServer:
                         break
                 else:
                     raise StopRun('%s: capture failed twice - %s' % (label, result.message))
-                self._progress('RUNNING %d/%d %s: %s' % (index + 1, len(POSES), label, result.message))
+                self._progress('RUNNING %d/%d %s: %s' % (index + 1, len(self.poses), label, result.message))
             self._progress('RUNNING fitting model')
             result = self.fit(None)
             self._progress(('DONE ' if result.success else 'FIT FAILED ') + result.message)
@@ -367,7 +376,7 @@ class CalibrationServer:
         self.stop_requested.clear()
         self.run_thread = threading.Thread(target=self._run, daemon=True)
         self.run_thread.start()
-        return TriggerResponse(success=True, message='Automatic calibration started (%d poses)' % len(POSES))
+        return TriggerResponse(success=True, message='Automatic calibration started (%d poses)' % len(self.poses))
 
     def stop(self, _request):
         self.stop_requested.set()

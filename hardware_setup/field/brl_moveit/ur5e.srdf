@@ -1,0 +1,152 @@
+<?xml version="1.0" ?>
+<!--This does not replace URDF, and is not an extension of URDF.
+    This is a format for representing semantic information about the robot structure.
+    A URDF file must exist for this robot as well, where the joints and the links that are referenced are defined
+-->
+<robot name="ur5e">
+    <!--GROUPS: Representation of a set of joints and links. This can be useful for specifying DOF to plan for, defining arms, end effectors, etc-->
+    <!--LINKS: When a link is specified, the parent joint of that link (if it exists) is automatically included-->
+    <!--JOINTS: When a joint is specified, the child link of that joint (which will always exist) is automatically included-->
+    <!--CHAINS: When a chain is specified, all the links along the chain (including endpoints) are included in the group. Additionally, all the joints that are parents to included links are also included. This means that joints along the chain and the parent joint of the base link are included in the group-->
+    <!--SUBGROUPS: Groups can also be formed by referencing to already defined group names-->
+    <group name="manipulator">
+        <chain base_link="ur5e_base_link" tip_link="graps_link" />
+    </group>
+    <!--GROUP STATES: Purpose: Define a named state for a particular group, in terms of joint values. This is useful to define states like 'folded arms'-->
+    <group_state name="drive" group="manipulator">
+        <joint name="ur5e_elbow_joint" value="2.5274" />
+        <joint name="ur5e_shoulder_lift_joint" value="-2.8207" />
+        <joint name="ur5e_shoulder_pan_joint" value="0" />
+        <joint name="ur5e_wrist_1_joint" value="0.3486" />
+        <joint name="ur5e_wrist_2_joint" value="1.5712" />
+        <joint name="ur5e_wrist_3_joint" value="1.5707" />
+    </group_state>
+    <group_state name="home" group="manipulator">
+        <joint name="ur5e_elbow_joint" value="0" />
+        <joint name="ur5e_shoulder_lift_joint" value="0" />
+        <joint name="ur5e_shoulder_pan_joint" value="0" />
+        <joint name="ur5e_wrist_1_joint" value="0" />
+        <joint name="ur5e_wrist_2_joint" value="0" />
+        <joint name="ur5e_wrist_3_joint" value="0" />
+    </group_state>
+    <group_state name="up" group="manipulator">
+        <joint name="ur5e_elbow_joint" value="0" />
+        <joint name="ur5e_shoulder_lift_joint" value="-1.5707" />
+        <joint name="ur5e_shoulder_pan_joint" value="0" />
+        <joint name="ur5e_wrist_1_joint" value="-1.5707" />
+        <joint name="ur5e_wrist_2_joint" value="0" />
+        <joint name="ur5e_wrist_3_joint" value="0" />
+    </group_state>
+    <group_state name="samsung_pick_pose_v0" group="manipulator">
+        <joint name="ur5e_elbow_joint" value="2.1806" />
+        <joint name="ur5e_shoulder_lift_joint" value="-1.39226" />
+        <joint name="ur5e_shoulder_pan_joint" value="1.597" />
+        <joint name="ur5e_wrist_1_joint" value="-0.226139" />
+        <joint name="ur5e_wrist_2_joint" value="1.56253" />
+        <joint name="ur5e_wrist_3_joint" value="1.597" />
+    </group_state>
+
+    <group_state name="samsung_pick_pose_v1" group="manipulator">
+        <joint name="ur5e_elbow_joint" value="1.8265814" />
+        <joint name="ur5e_shoulder_lift_joint" value="-1.2829862" />
+        <joint name="ur5e_shoulder_pan_joint" value="1.5847867" />
+        <joint name="ur5e_wrist_1_joint" value="1.0252217" />
+        <joint name="ur5e_wrist_2_joint" value="1.5442137" />
+        <joint name="ur5e_wrist_3_joint" value="1.5656776" />
+    </group_state>
+
+    <group_state name="ee_center_pose" group="manipulator">
+        <joint name="ur5e_elbow_joint" value="1.8591298" />
+        <joint name="ur5e_shoulder_lift_joint" value="-1.643469" />
+        <joint name="ur5e_shoulder_pan_joint" value="1.5945791" />
+        <joint name="ur5e_wrist_1_joint" value="0.3486895" />
+        <joint name="ur5e_wrist_2_joint" value="1.5572616" />
+        <joint name="ur5e_wrist_3_joint" value="1.5953207" />
+    </group_state>
+
+    <!--END EFFECTOR: Purpose: Represent information about an end effector.-->
+    <end_effector name="endeffector" parent_link="ur5e_ee_link" group="manipulator" />
+    <!--DISABLE COLLISIONS: By default it is assumed that any link of the robot could potentially come into collision with any other link in the robot. This tag disables collision checking between a specified pair of links. -->
+    <disable_collisions link1="ur5e_ee_link" link2="gripper_base_link" reason="Adjacent" />
+    <disable_collisions link1="ur5e_ee_link" link2="gripper_finger1_finger_link" reason="Never" />
+    <disable_collisions link1="ur5e_ee_link" link2="gripper_finger1_finger_tip_link" reason="Never" />
+    <disable_collisions link1="ur5e_ee_link" link2="gripper_finger1_inner_knuckle_link" reason="Never" />
+    <disable_collisions link1="ur5e_ee_link" link2="gripper_finger1_knuckle_link" reason="Never" />
+    <disable_collisions link1="ur5e_ee_link" link2="gripper_finger2_finger_link" reason="Never" />
+    <disable_collisions link1="ur5e_ee_link" link2="gripper_finger2_finger_tip_link" reason="Never" />
+    <disable_collisions link1="ur5e_ee_link" link2="gripper_finger2_inner_knuckle_link" reason="Never" />
+    <disable_collisions link1="ur5e_ee_link" link2="gripper_finger2_knuckle_link" reason="Never" />
+    <disable_collisions link1="ur5e_ee_link" link2="ur5e_wrist_1_link" reason="Never" />
+    <disable_collisions link1="ur5e_ee_link" link2="ur5e_wrist_2_link" reason="Never" />
+    <disable_collisions link1="ur5e_ee_link" link2="ur5e_wrist_3_link" reason="Adjacent" />
+    <disable_collisions link1="ur5e_forearm_link" link2="ur5e_upper_arm_link" reason="Adjacent" />
+    <disable_collisions link1="ur5e_forearm_link" link2="ur5e_wrist_1_link" reason="Adjacent" />
+    <disable_collisions link1="ur5e_forearm_link" link2="ur5e_wrist_2_link" reason="Never" />
+    <disable_collisions link1="gripper_base_link" link2="gripper_finger1_finger_link" reason="Never" />
+    <disable_collisions link1="gripper_base_link" link2="gripper_finger1_finger_tip_link" reason="Never" />
+    <disable_collisions link1="gripper_base_link" link2="gripper_finger1_inner_knuckle_link" reason="Adjacent" />
+    <disable_collisions link1="gripper_base_link" link2="gripper_finger1_knuckle_link" reason="Adjacent" />
+    <disable_collisions link1="gripper_base_link" link2="gripper_finger2_finger_link" reason="Never" />
+    <disable_collisions link1="gripper_base_link" link2="gripper_finger2_finger_tip_link" reason="Never" />
+    <disable_collisions link1="gripper_base_link" link2="gripper_finger2_inner_knuckle_link" reason="Adjacent" />
+    <disable_collisions link1="gripper_base_link" link2="gripper_finger2_knuckle_link" reason="Adjacent" />
+    <disable_collisions link1="gripper_base_link" link2="ur5e_wrist_1_link" reason="Never" />
+    <disable_collisions link1="gripper_base_link" link2="ur5e_wrist_2_link" reason="Never" />
+    <disable_collisions link1="gripper_base_link" link2="ur5e_wrist_3_link" reason="Default" />
+    <disable_collisions link1="gripper_finger1_finger_link" link2="gripper_finger1_finger_tip_link" reason="Default" />
+    <disable_collisions link1="gripper_finger1_finger_link" link2="gripper_finger1_inner_knuckle_link" reason="Never" />
+    <disable_collisions link1="gripper_finger1_finger_link" link2="gripper_finger1_knuckle_link" reason="Adjacent" />
+    <disable_collisions link1="gripper_finger1_finger_link" link2="gripper_finger2_finger_link" reason="Never" />
+    <disable_collisions link1="gripper_finger1_finger_link" link2="gripper_finger2_finger_tip_link" reason="Never" />
+    <disable_collisions link1="gripper_finger1_finger_link" link2="gripper_finger2_inner_knuckle_link" reason="Never" />
+    <disable_collisions link1="gripper_finger1_finger_link" link2="gripper_finger2_knuckle_link" reason="Never" />
+    <disable_collisions link1="gripper_finger1_finger_link" link2="ur5e_wrist_1_link" reason="Never" />
+    <disable_collisions link1="gripper_finger1_finger_link" link2="ur5e_wrist_2_link" reason="Never" />
+    <disable_collisions link1="gripper_finger1_finger_link" link2="ur5e_wrist_3_link" reason="Never" />
+    <disable_collisions link1="gripper_finger1_finger_tip_link" link2="gripper_finger1_inner_knuckle_link" reason="Adjacent" />
+    <disable_collisions link1="gripper_finger1_finger_tip_link" link2="gripper_finger1_knuckle_link" reason="Never" />
+    <disable_collisions link1="gripper_finger1_finger_tip_link" link2="gripper_finger2_finger_link" reason="Never" />
+    <disable_collisions link1="gripper_finger1_finger_tip_link" link2="gripper_finger2_inner_knuckle_link" reason="Never" />
+    <disable_collisions link1="gripper_finger1_finger_tip_link" link2="gripper_finger2_knuckle_link" reason="Never" />
+    <disable_collisions link1="gripper_finger1_finger_tip_link" link2="ur5e_wrist_1_link" reason="Never" />
+    <disable_collisions link1="gripper_finger1_finger_tip_link" link2="ur5e_wrist_2_link" reason="Never" />
+    <disable_collisions link1="gripper_finger1_finger_tip_link" link2="ur5e_wrist_3_link" reason="Never" />
+    <disable_collisions link1="gripper_finger1_inner_knuckle_link" link2="gripper_finger1_knuckle_link" reason="Never" />
+    <disable_collisions link1="gripper_finger1_inner_knuckle_link" link2="gripper_finger2_finger_link" reason="Never" />
+    <disable_collisions link1="gripper_finger1_inner_knuckle_link" link2="gripper_finger2_finger_tip_link" reason="Never" />
+    <disable_collisions link1="gripper_finger1_inner_knuckle_link" link2="gripper_finger2_inner_knuckle_link" reason="Never" />
+    <disable_collisions link1="gripper_finger1_inner_knuckle_link" link2="gripper_finger2_knuckle_link" reason="Never" />
+    <disable_collisions link1="gripper_finger1_inner_knuckle_link" link2="ur5e_wrist_1_link" reason="Never" />
+    <disable_collisions link1="gripper_finger1_inner_knuckle_link" link2="ur5e_wrist_2_link" reason="Never" />
+    <disable_collisions link1="gripper_finger1_inner_knuckle_link" link2="ur5e_wrist_3_link" reason="Never" />
+    <disable_collisions link1="gripper_finger1_knuckle_link" link2="gripper_finger2_finger_link" reason="Never" />
+    <disable_collisions link1="gripper_finger1_knuckle_link" link2="gripper_finger2_finger_tip_link" reason="Never" />
+    <disable_collisions link1="gripper_finger1_knuckle_link" link2="gripper_finger2_inner_knuckle_link" reason="Never" />
+    <disable_collisions link1="gripper_finger1_knuckle_link" link2="gripper_finger2_knuckle_link" reason="Never" />
+    <disable_collisions link1="gripper_finger1_knuckle_link" link2="ur5e_wrist_1_link" reason="Never" />
+    <disable_collisions link1="gripper_finger1_knuckle_link" link2="ur5e_wrist_2_link" reason="Never" />
+    <disable_collisions link1="gripper_finger1_knuckle_link" link2="ur5e_wrist_3_link" reason="Never" />
+    <disable_collisions link1="gripper_finger2_finger_link" link2="gripper_finger2_finger_tip_link" reason="Default" />
+    <disable_collisions link1="gripper_finger2_finger_link" link2="gripper_finger2_inner_knuckle_link" reason="Never" />
+    <disable_collisions link1="gripper_finger2_finger_link" link2="gripper_finger2_knuckle_link" reason="Adjacent" />
+    <disable_collisions link1="gripper_finger2_finger_link" link2="ur5e_wrist_1_link" reason="Never" />
+    <disable_collisions link1="gripper_finger2_finger_link" link2="ur5e_wrist_2_link" reason="Never" />
+    <disable_collisions link1="gripper_finger2_finger_link" link2="ur5e_wrist_3_link" reason="Never" />
+    <disable_collisions link1="gripper_finger2_finger_tip_link" link2="gripper_finger2_inner_knuckle_link" reason="Adjacent" />
+    <disable_collisions link1="gripper_finger2_finger_tip_link" link2="gripper_finger2_knuckle_link" reason="Never" />
+    <disable_collisions link1="gripper_finger2_finger_tip_link" link2="ur5e_wrist_1_link" reason="Never" />
+    <disable_collisions link1="gripper_finger2_finger_tip_link" link2="ur5e_wrist_2_link" reason="Never" />
+    <disable_collisions link1="gripper_finger2_finger_tip_link" link2="ur5e_wrist_3_link" reason="Never" />
+    <disable_collisions link1="gripper_finger2_inner_knuckle_link" link2="gripper_finger2_knuckle_link" reason="Never" />
+    <disable_collisions link1="gripper_finger2_inner_knuckle_link" link2="ur5e_wrist_1_link" reason="Never" />
+    <disable_collisions link1="gripper_finger2_inner_knuckle_link" link2="ur5e_wrist_2_link" reason="Never" />
+    <disable_collisions link1="gripper_finger2_inner_knuckle_link" link2="ur5e_wrist_3_link" reason="Never" />
+    <disable_collisions link1="gripper_finger2_knuckle_link" link2="ur5e_wrist_1_link" reason="Never" />
+    <disable_collisions link1="gripper_finger2_knuckle_link" link2="ur5e_wrist_2_link" reason="Never" />
+    <disable_collisions link1="gripper_finger2_knuckle_link" link2="ur5e_wrist_3_link" reason="Never" />
+    <disable_collisions link1="ur5e_shoulder_link" link2="ur5e_upper_arm_link" reason="Adjacent" />
+    <disable_collisions link1="ur5e_shoulder_link" link2="ur5e_base_link" reason="Adjacent" />
+    <disable_collisions link1="ur5e_wrist_1_link" link2="ur5e_wrist_2_link" reason="Adjacent" />
+    <disable_collisions link1="ur5e_wrist_1_link" link2="ur5e_wrist_3_link" reason="Never" />
+    <disable_collisions link1="ur5e_wrist_2_link" link2="ur5e_wrist_3_link" reason="Adjacent" />
+</robot>

@@ -9,6 +9,11 @@
   <arg name="gravity_model_file" default=""/>
   <arg name="joint_kp" default="50.0"/>
   <arg name="arm_velocity_limit" default="1.57"/>
+  <!-- Assumed command-to-measured lag for the latched gap fault:
+       max_command_gap = 1.2 * arm_velocity_limit * following_lag_seconds + 0.015 rad.
+       Lab (HQP next to the driver) is ~0.06 s. In the field HQP commands the robot PC over
+       the network; 2026-11-11 F/T calibration measured ~0.1 s (fault at 0.44 rad/s). -->
+  <arg name="following_lag_seconds" default="0.06"/>
   <arg name="acceleration_limits" default="false"/>
   <arg name="command_horizon" default="0.02"/>
   <!-- full_model (default): the field robot's whole /brl_robot/robot_description, exported at launch
@@ -20,8 +25,9 @@
   <arg name="model_file" default="$(dirname)/field/ur5e_arm.urdf"/>
   <param if="$(arg full_model)" name="/brl_field/full_model_export"
          command="python3 $(dirname)/prepare_field_ur5e_model.py --full --output $(arg full_model_file)"/>
-  <!-- HQP visual servoing: subscribe /rci_action_manager/servo_target (graps_link pose in the model frame). -->
-  <arg name="servo" default="true"/>
+  <!-- HQP visual servoing: subscribe /rci_action_manager/servo_target (graps_link pose in the model frame).
+       Default off (BRL step VS); servo:=true together with the planner _hqp_visual_servoing:=true. -->
+  <arg name="servo" default="false"/>
   <!-- The servo node runs here, next to HQP; only camera topics come from the robot PC.
        depth_transport:=compressedDepth receives PNG-compressed depth (about 1/3 of raw) and
        decodes it on this PC; use it on Wi-Fi. raw = the camera topic as is. -->
@@ -82,7 +88,7 @@
     <param name="kp" value="$(arg joint_kp)"/>
     <param name="acceleration_limits" value="$(arg acceleration_limits)"/>
     <rosparam param="limits/velocity" subst_value="true">[$(arg arm_velocity_limit), $(arg arm_velocity_limit), $(arg arm_velocity_limit), $(arg arm_velocity_limit), $(arg arm_velocity_limit), $(arg arm_velocity_limit)]</rosparam>
-    <param name="max_command_gap" value="$(eval 1.2 * float(arg('arm_velocity_limit')) * 0.06 + 0.015)"/>
+    <param name="max_command_gap" value="$(eval 1.2 * float(arg('arm_velocity_limit')) * float(arg('following_lag_seconds')) + 0.015)"/>
     <remap from="/ur_hardware_interface/robot_program_running" to="$(arg arm_namespace)/ur_hardware_interface/robot_program_running"/>
     <remap from="/speed_scaling_factor" to="$(arg arm_namespace)/speed_scaling_factor"/>
   </node>
