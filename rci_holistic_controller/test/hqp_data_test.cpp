@@ -19,10 +19,10 @@ public:
     }
     bool getSE3Traj(pinocchio::SE3) override { return false; }
     bool getVectorTraj(Eigen::VectorXd b) override { return c_->setVector(b); }
-    const std::shared_ptr<ConstraintBase> constraint() const override { return c_; }
-    std::shared_ptr<ConstraintBase> compute(State) override { return c_; }
+    const std::shared_ptr<chanhqp::constraint::ConstraintBase> constraint() const override { return c_; }
+    std::shared_ptr<chanhqp::constraint::ConstraintBase> compute(State) override { return c_; }
 private:
-    std::shared_ptr<ConstraintBase> c_;
+    std::shared_ptr<chanhqp::constraint::ConstraintBase> c_;
 };
 
 class InspectHQP : public HQPData

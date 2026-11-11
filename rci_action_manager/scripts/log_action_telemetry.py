@@ -1,8 +1,12 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Read-only ROS telemetry recorder. CSV disk writes happen on a worker thread."""
-import argparse,csv,json,queue,threading
+from __future__ import division, print_function
+import argparse,csv,errno,json,os,sys,threading
 from datetime import datetime
-from pathlib import Path
+try:
+    import queue
+except ImportError:  # Python 2
+    import Queue as queue
 import rospy
 from rci_action_manager.msg import ControlTelemetry
 from std_msgs.msg import Float64MultiArray
@@ -24,12 +28,21 @@ def row(msg):
     for name in VECTORS:values += list(getattr(msg,name))
     return values
 
+def makedirs(path):
+    try: os.makedirs(path)
+    except OSError as exc:
+        if exc.errno!=errno.EEXIST: raise
+
+def open_csv(path):
+    # csv needs newline='' on Python 3 and a binary file on Python 2.
+    return open(path,'w',newline='') if sys.version_info[0]>=3 else open(path,'wb')
+
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--output',help='Exact run directory (default timestamped root)')
     args=parser.parse_args(rospy.myargv()[1:]);rospy.init_node('action_telemetry_logger')
-    root=Path(rospy.get_param('~output_root',str(Path.home()/'catkin_ws/artifacts/real_action_logs')))
-    out=Path(args.output) if args.output else root/datetime.now().strftime('%Y%m%d_%H%M%S_%f')
-    out.mkdir(parents=True,exist_ok=True)
+    root=rospy.get_param('~output_root',os.path.join(os.path.expanduser('~'),'catkin_ws/artifacts/real_action_logs'))
+    out=args.output if args.output else os.path.join(root,datetime.now().strftime('%Y%m%d_%H%M%S_%f'))
+    makedirs(out)
     controller_namespace=rospy.get_param('~controller_namespace','/real_action_controller')
     metadata=dict(topic=rospy.get_param('~topic',controller_namespace+'/telemetry'),
         frame='from CSV frame column',translation_units='m',rotation_error_units='rad',
@@ -40,7 +53,8 @@ def main():
         command_timing_topic=controller_namespace+'/command_timing',
         command_timing_note='Node publication time/steady interval/snapshot age/sequence gap; not hardware receipt')
     pending=queue.Queue(maxsize=2000);stop=threading.Event();failure=[]
-    def save_metadata(): (out/'metadata.json').write_text(json.dumps(metadata,indent=2))
+    def save_metadata():
+        with open(os.path.join(out,'metadata.json'),'w') as meta: meta.write(json.dumps(metadata,indent=2))
     save_metadata()
     def receive(msg,kind='telemetry'):
         try:pending.put_nowait((kind,msg))
@@ -48,7 +62,7 @@ def main():
             metadata['dropped']+=1;rospy.logwarn_throttle(5,'Telemetry queue full; samples dropped')
     def write():
         try:
-            with (out/'telemetry.csv').open('w',newline='') as file, (out/'command_timing.csv').open('w',newline='') as timing_file:
+            with open_csv(os.path.join(out,'telemetry.csv')) as file, open_csv(os.path.join(out,'command_timing.csv')) as timing_file:
                 writer=csv.writer(file);writer.writerow(FIELDS)
                 timing_writer=csv.writer(timing_file)
                 timing_writer.writerow(['time','interval_ms','snapshot_age_ms','sequence_gap'])
@@ -68,7 +82,7 @@ def main():
     subscriber=rospy.Subscriber(metadata['topic'],ControlTelemetry,receive,queue_size=200)
     timing_subscriber=rospy.Subscriber(metadata['command_timing_topic'],Float64MultiArray,
                                      lambda msg:receive(msg,'timing'),queue_size=200)
-    rospy.loginfo('Action telemetry CSV: %s',out/'telemetry.csv')
+    rospy.loginfo('Action telemetry CSV: %s',os.path.join(out,'telemetry.csv'))
     try:rospy.spin()
     finally:
         subscriber.unregister();timing_subscriber.unregister();stop.set();worker.join(timeout=5)

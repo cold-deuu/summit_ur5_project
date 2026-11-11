@@ -24,7 +24,7 @@
   <arg name="full_model_file" default="$(env HOME)/.ros/brl_field/field_full.urdf"/>
   <arg name="model_file" default="$(dirname)/field/ur5e_arm.urdf"/>
   <param if="$(arg full_model)" name="/brl_field/full_model_export"
-         command="python3 $(dirname)/prepare_field_ur5e_model.py --full --output $(arg full_model_file)"/>
+         command="python $(dirname)/prepare_field_ur5e_model.py --full --output $(arg full_model_file)"/>
   <!-- HQP visual servoing: subscribe /rci_action_manager/servo_target (graps_link pose in the model frame).
        Default off (BRL step VS); servo:=true together with the planner _hqp_visual_servoing:=true. -->
   <arg name="servo" default="false"/>

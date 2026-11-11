@@ -1,11 +1,14 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Read the field URDF and export its arm chain only. Sends no robot commands."""
+from __future__ import division, print_function
 import argparse
 import copy
 from datetime import datetime
+import errno
 import hashlib
+import io
 import json
-from pathlib import Path
+import os
 import xml.etree.ElementTree as ET
 import rospy
 
@@ -13,8 +16,22 @@ NAMES = ['ur5e_shoulder_pan_joint', 'ur5e_shoulder_lift_joint', 'ur5e_elbow_join
          'ur5e_wrist_1_joint', 'ur5e_wrist_2_joint', 'ur5e_wrist_3_joint']
 
 
+def utf8(text):
+    return text.encode('utf-8') if isinstance(text, type(u'')) else text
+
+
+def write_text(path, text):
+    try:
+        os.makedirs(os.path.dirname(path))
+    except OSError as exc:
+        if exc.errno != errno.EEXIST:
+            raise
+    with io.open(path, 'w', encoding='utf-8') as out:
+        out.write(text if isinstance(text, type(u'')) else text.decode('utf-8'))
+
+
 def extract(text):
-    source = ET.fromstring(text)
+    source = ET.fromstring(utf8(text))
     links = {node.get('name'): node for node in source.findall('link')}
     by_child = {node.find('child').get('link'): node for node in source.findall('joint')}
     base, tip = 'ur5e_base_link', 'ur5e_wrist_3_link'
@@ -48,13 +65,13 @@ def extract(text):
         result.append(copy.deepcopy(links[name]))
     for joint in selected_joints:
         result.append(copy.deepcopy(joint))
-    return ET.tostring(result, encoding='unicode')
+    return ET.tostring(result, encoding='utf-8').decode('utf-8')  # no XML declaration for utf-8
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source-param', default='/brl_robot/robot_description')
-    parser.add_argument('--output', type=Path, default=Path(__file__).resolve().parent/'field/ur5e_arm.urdf')
+    parser.add_argument('--output', default=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'field/ur5e_arm.urdf'))
     # --full: the whole field model unchanged (HQP locks every non-arm joint itself, as in the sim);
     # its root link (the mobile base footprint) becomes the HQP model frame.
     parser.add_argument('--full', action='store_true', help='export the whole field model, not only the arm')
@@ -62,22 +79,20 @@ def main():
     rospy.init_node('prepare_field_arm_model', anonymous=True)
     text = rospy.get_param(args.source_param)
     if args.full:
-        root = ET.fromstring(text)
+        root = ET.fromstring(utf8(text))
         children = {node.find('child').get('link') for node in root.findall('joint')}
         roots = [node.get('name') for node in root.findall('link') if node.get('name') not in children]
         extract(text)  # same arm-chain check as the arm-only export
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(text)
+        write_text(args.output, text)
         print('Saved field full model (root %s): %s' % (','.join(roots), args.output))
         return
     output = extract(text)
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(output + '\n')
-    metadata = dict(source_parameter=args.source_param, source_sha256=hashlib.sha256(text.encode()).hexdigest(),
+    write_text(args.output, output + '\n')
+    metadata = dict(source_parameter=args.source_param, source_sha256=hashlib.sha256(utf8(text)).hexdigest(),
                     exported_at=datetime.now().isoformat(), joint_names=NAMES,
                     base_link='ur5e_base_link', controlled_link='ur5e_wrist_3_link',
                     note='Matches the published field model; not a factory calibration extraction.')
-    args.output.with_suffix('.json').write_text(json.dumps(metadata, indent=2))
+    write_text(os.path.splitext(args.output)[0] + '.json', json.dumps(metadata, indent=2))
     print('Saved field arm-only model: ' + str(args.output))
     print('No ROS parameters, controllers or robot commands changed.')
 

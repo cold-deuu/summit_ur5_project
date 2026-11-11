@@ -1,6 +1,6 @@
 #include <string>
 #include <iosfwd>
-#include <filesystem>
+#include <experimental/filesystem>  // gcc 7 (Ubuntu 18.04): no <filesystem>
 #include <eigen3/Eigen/Dense>
 
 #include <fcl/fcl.h>

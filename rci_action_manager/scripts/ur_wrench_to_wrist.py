@@ -1,9 +1,23 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Transform measured UR wrench to wrist axes/origin; publishes no commands."""
+from __future__ import division, print_function
 from collections import deque
 import threading
 import time
 import traceback
+try:
+    from time import monotonic
+except ImportError:  # Python 2 (Melodic): the same CLOCK_MONOTONIC through librt
+    import ctypes
+
+    class _Timespec(ctypes.Structure):
+        _fields_ = [('sec', ctypes.c_long), ('nsec', ctypes.c_long)]
+    _clock_gettime = ctypes.CDLL('librt.so.1').clock_gettime
+
+    def monotonic():
+        t = _Timespec()
+        _clock_gettime(1, ctypes.byref(t))
+        return t.sec + t.nsec * 1e-9
 import numpy as np
 import rospy
 import tf
@@ -15,7 +29,7 @@ class WrenchAdapter:
         self.source=rospy.get_param('~source_frame','tool0_controller')
         self.listener=tf.TransformListener()
         self.queue=deque(maxlen=100);self.lock=threading.Lock()
-        self.received=0;self.published=0;self.last_output=time.monotonic();self.tf_age=None
+        self.received=0;self.published=0;self.last_output=monotonic();self.tf_age=None
         self.publisher=rospy.Publisher('/hqp_shadow/wrench',WrenchStamped,queue_size=5)
         self.subscriber=rospy.Subscriber('/wrench',WrenchStamped,self.receive,queue_size=10,tcp_nodelay=True)
         # Processing runs in the wall-clock main loop below. Subscriber/TF
@@ -55,12 +69,12 @@ class WrenchAdapter:
         force=np.array([wrench.force.x,wrench.force.y,wrench.force.z])
         torque=np.array([wrench.torque.x,wrench.torque.y,wrench.torque.z])
         if not np.isfinite(np.r_[force,torque,position,R.ravel()]).all():return
-        force=R@force;torque=R@torque+np.cross(position,force)
+        force=R.dot(force);torque=R.dot(torque)+np.cross(position,force)
         out=WrenchStamped();out.header.stamp=msg.header.stamp;out.header.frame_id=self.target
         out.wrench.force.x,out.wrench.force.y,out.wrench.force.z=force
         out.wrench.torque.x,out.wrench.torque.y,out.wrench.torque.z=torque
         self.publisher.publish(out)
-        self.published+=1;self.last_output=time.monotonic()
+        self.published+=1;self.last_output=monotonic()
         with self.lock:
             while self.queue and self.queue[0].header.stamp<=msg.header.stamp:
                 self.queue.popleft()
@@ -69,15 +83,15 @@ if __name__=='__main__':
     rospy.init_node('ur_wrench_to_wrist');adapter=WrenchAdapter()
     # Do not let an uncaught Timer callback exception silently disable F/T.
     # An errored iteration publishes nothing; retain bounded-age data to retry.
-    next_update=time.monotonic()
+    next_update=monotonic()
     while not rospy.is_shutdown():
         try:
             adapter.process(None)
         except Exception:
             rospy.logerr_throttle(2,'Wrench adapter processing failed; no transformed output: %s',traceback.format_exc())
-        if time.monotonic()-adapter.last_output>1:
+        if monotonic()-adapter.last_output>1:
             rospy.logwarn_throttle(2,'Wrench adapter stalled: received=%d transformed=%d buffered=%d TF_age=%s processor=wall_loop',
                                    adapter.received,adapter.published,len(adapter.queue),adapter.tf_age)
         next_update+=.01
-        if next_update<time.monotonic():next_update=time.monotonic()+.01
-        time.sleep(max(0,next_update-time.monotonic()))
+        if next_update<monotonic():next_update=monotonic()+.01
+        time.sleep(max(0,next_update-monotonic()))

@@ -16,7 +16,7 @@
 #include <ostream>
 #include <iostream>
 #include <iosfwd>
-#include <filesystem>
+#include <experimental/filesystem>  // gcc 7 (Ubuntu 18.04): no <filesystem>
 #include <fstream>
 
 // Linear Algebra Header

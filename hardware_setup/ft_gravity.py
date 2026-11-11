@@ -1,17 +1,79 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Inspect URDF payloads, collect unloaded poses, fit and subtract residual F/T gravity."""
+from __future__ import division, print_function
 import argparse
 from collections import deque
+import errno
+import io
 import json
-import math
-from pathlib import Path
+import os
 import sys
 import threading
 import time
+try:
+    from time import monotonic
+except ImportError:  # Python 2 (Melodic): the same CLOCK_MONOTONIC through librt
+    import ctypes
+
+    class _Timespec(ctypes.Structure):
+        _fields_ = [('sec', ctypes.c_long), ('nsec', ctypes.c_long)]
+    _clock_gettime = ctypes.CDLL('librt.so.1').clock_gettime
+
+    def monotonic():
+        t = _Timespec()
+        _clock_gettime(1, ctypes.byref(t))
+        return t.sec + t.nsec * 1e-9
 import xml.etree.ElementTree as ET
 
 import numpy as np
 import yaml
+
+
+try:
+    input = raw_input  # Python 2: input() would evaluate the text
+except NameError:
+    pass
+
+
+def isfinite(value):
+    return bool(np.isfinite(value))
+
+
+def path_of(path):
+    return os.path.expanduser(path)
+
+
+def read_text(path):
+    with io.open(path_of(path), encoding='utf-8') as source:
+        return source.read()
+
+
+def write_text(path, text):
+    path = path_of(path)
+    try:
+        os.makedirs(os.path.dirname(path))
+    except OSError as exc:
+        if exc.errno != errno.EEXIST:
+            raise
+    with io.open(path, 'w', encoding='utf-8') as out:
+        out.write(text if isinstance(text, type(u'')) else text.decode('utf-8'))
+
+
+def yaml_dump(data):
+    try:
+        return yaml.safe_dump(data, sort_keys=False)
+    except TypeError:  # PyYAML < 5.1 (Ubuntu 18.04): no sort_keys
+        return yaml.safe_dump(data)
+
+
+def lstsq(a, b):
+    # rcond=None (NumPy >= 1.14 default) written out for NumPy 1.13 (Ubuntu 18.04).
+    return np.linalg.lstsq(a, b, rcond=np.finfo(float).eps * max(a.shape))
+
+
+def flush_print(*values):
+    print(*values)
+    sys.stdout.flush()
 
 
 def vector(value, size):
@@ -56,8 +118,8 @@ def solve(poses):
         if condition > 100:
             raise ValueError('Insufficient orientation diversity (condition %.1f)' % condition)
         conditions.append(float(condition))
-    f = np.linalg.lstsq(force, observations[:, :3].reshape(-1), rcond=None)[0]
-    t = np.linalg.lstsq(torque, observations[:, 3:].reshape(-1), rcond=None)[0]
+    f = lstsq(force, observations[:, :3].reshape(-1))[0]
+    t = lstsq(torque, observations[:, 3:].reshape(-1))[0]
     return dict(effective_mass_kg=float(f[0]), first_moment_kg_m=t[:3].tolist(),
                 bias=np.r_[f[1:], t[3:]].tolist(), conditions=conditions)
 
@@ -77,7 +139,7 @@ def errors(model, poses):
 
 
 def fit(dataset, max_force, max_torque):
-    if not all(math.isfinite(v) and v > 0 for v in [max_force, max_torque]):
+    if not all(isfinite(v) and v > 0 for v in [max_force, max_torque]):
         raise ValueError('Validation thresholds must be finite and positive')
     poses = dataset['poses']
     if len(poses) < 6:
@@ -100,10 +162,10 @@ def fit(dataset, max_force, max_torque):
 
 
 def load_model(path):
-    model = yaml.safe_load(Path(path).read_text())
+    model = yaml.safe_load(read_text(path))
     if model.get('schema') != 1 or model.get('validation', {}).get('accepted') is not True:
         raise ValueError('Model has not passed calibration validation')
-    if not math.isfinite(float(model['effective_mass_kg'])):
+    if not isfinite(float(model['effective_mass_kg'])):
         raise ValueError('Nonfinite mass coefficient')
     vector(model['first_moment_kg_m'], 3); vector(model['bias'], 6)
     if np.linalg.norm(vector(model['gravity_base'], 3)) < 1:
@@ -136,8 +198,8 @@ def capture(args):
     data = dict(schema=1, base_frame=args.base_frame, wrench_frame=args.wrench_frame,
                 gravity_base=args.gravity, wrench_topic=args.input, poses=[],
                 note='Operator-declared unloaded stationary poses; keep UR payload/zero settings unchanged.')
-    output = Path(args.output).expanduser()
-    if output.exists():
+    output = path_of(args.output)
+    if os.path.exists(output):
         raise ValueError('Output already exists; choose a new dataset path')
     listener = tf.TransformListener()
     lock = threading.Lock(); pending = deque(maxlen=500); states = deque(maxlen=1000); telemetry = [None]
@@ -150,10 +212,10 @@ def capture(args):
     subscribers = [rospy.Subscriber(args.input, WrenchStamped, receive_wrench, queue_size=100),
                    rospy.Subscriber(state_topic, JointState, receive_state, queue_size=100),
                    rospy.Subscriber(ns+'/telemetry', ControlTelemetry, receive_telemetry, queue_size=10)]
-    print('No robot commands or zeroing. Keep admittance OFF and all payload settings unchanged.\n'
+    flush_print('No robot commands or zeroing. Keep admittance OFF and all payload settings unchanged.\n'
           'Move to an unloaded pose yourself, wait for motion to settle, then enter a label.\n'
           'Use at least six diverse tilts about two axes. A return-to-first pose is useful.\n'
-          'Each label declares no tool contact. Enter quit to finish.', flush=True)
+          'Each label declares no tool contact. Enter quit to finish.')
     while not rospy.is_shutdown():
         try: label = input('unloaded pose label> ').strip()
         except (EOFError, KeyboardInterrupt): break
@@ -164,8 +226,8 @@ def capture(args):
                 raise ValueError('Use a unique label')
             with lock: pending.clear()
             samples = []; joint_samples = []; gravities = []; last_stamp = 0
-            deadline = time.monotonic()+args.seconds
-            while time.monotonic() < deadline and not rospy.is_shutdown():
+            deadline = monotonic()+args.seconds
+            while monotonic() < deadline and not rospy.is_shutdown():
                 with lock:
                     msg = pending.popleft() if pending else None
                     joints = list(states); tel = telemetry[0]
@@ -188,7 +250,7 @@ def capture(args):
                 try: _, quaternion = listener.lookupTransform(args.base_frame, args.wrench_frame, msg.header.stamp)
                 except tf.Exception: continue
                 samples.append(wrench_value(msg)); joint_samples.append(q)
-                gravities.append(rotation(quaternion).T @ vector(args.gravity, 3)); last_stamp = stamp
+                gravities.append(rotation(quaternion).T.dot(vector(args.gravity, 3))); last_stamp = stamp
             if rospy.get_param(ns+'/admittance_enabled', True): raise ValueError('Admittance enabled during capture')
             if len(samples) < args.min_samples: raise ValueError('Too few fresh synchronized samples: %d' % len(samples))
             if np.max(np.ptp(joint_samples, axis=0)) > .003: raise ValueError('Joint posture drifted; retry pose')
@@ -197,18 +259,17 @@ def capture(args):
             data['poses'].append(dict(label=label, samples=len(samples), wrench=np.mean(samples, axis=0).tolist(),
                                       wrench_std=spread.tolist(), gravity_wrist=np.mean(gravities, axis=0).tolist(),
                                       joints=np.mean(joint_samples, axis=0).tolist()))
-            output.parent.mkdir(parents=True, exist_ok=True)
-            output.write_text(json.dumps(data, indent=2))
-            print('Saved %s: %d samples; %d poses total' % (label, len(samples), len(data['poses'])), flush=True)
-        except (ValueError, IndexError) as exc: print('Rejected pose:', exc, flush=True)
-    print('Dataset:', output, flush=True)
+            write_text(output, json.dumps(data, indent=2))
+            flush_print('Saved %s: %d samples; %d poses total' % (label, len(samples), len(data['poses'])))
+        except (ValueError, IndexError) as exc: flush_print('Rejected pose:', exc)
+    flush_print('Dataset:', output)
 
 
 def run(args):
     import rospy
     import tf
     from geometry_msgs.msg import WrenchStamped
-    model = load_model(Path(args.model).expanduser())
+    model = load_model(path_of(args.model))
     rospy.init_node('ft_gravity_compensator')
     if rospy.resolve_name(args.input) == rospy.resolve_name(args.output):
         raise ValueError('Input and output topics must differ')
@@ -234,7 +295,7 @@ def run(args):
             try:
                 _, quaternion = listener.lookupTransform(model['base_frame'], model['wrench_frame'], msg.header.stamp)
             except tf.Exception: continue
-            gravity = rotation(quaternion).T @ vector(model['gravity_base'], 3)
+            gravity = rotation(quaternion).T.dot(vector(model['gravity_base'], 3))
             value = wrench_value(msg)-predict(model, gravity)
             out = WrenchStamped(); out.header = msg.header
             out.wrench.force.x, out.wrench.force.y, out.wrench.force.z = value[:3]
@@ -250,11 +311,11 @@ def run(args):
 
 def inspect_urdf(args):
     if args.urdf:
-        text = Path(args.urdf).expanduser().read_text()
+        text = read_text(args.urdf)
     else:
         import rospy
         text = rospy.get_param(args.param)
-    root = ET.fromstring(text); links = {l.get('name'): l for l in root.findall('link')}
+    root = ET.fromstring(text.encode('utf-8') if isinstance(text, type(u'')) else text); links = {l.get('name'): l for l in root.findall('link')}
     if args.root not in links: raise ValueError('Missing root link '+args.root)
     selected = {args.root}
     while True:
@@ -273,7 +334,8 @@ def inspect_urdf(args):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    sub = parser.add_subparsers(dest='mode', required=True)
+    sub = parser.add_subparsers(dest='mode')
+    sub.required = True
     p = sub.add_parser('inspect-urdf'); p.add_argument('--urdf'); p.add_argument('--param', default='/brl_robot/robot_description')
     p.add_argument('--root', default='ur5e_wrist_3_link')
     p = sub.add_parser('collect'); p.add_argument('--output', required=True)
@@ -295,14 +357,14 @@ def main():
         capture(args)
     elif args.mode == 'run': run(args)
     else:
-        dataset = json.loads(Path(args.dataset).expanduser().read_text())
-        path = Path(args.model).expanduser()
+        dataset = json.loads(read_text(args.dataset))
+        path = path_of(args.model)
         if args.mode == 'fit':
             model = fit(dataset, args.max_force_rms, args.max_torque_rms)
-            path.parent.mkdir(parents=True, exist_ok=True); path.write_text(yaml.safe_dump(model, sort_keys=False))
-            print(yaml.safe_dump(model, sort_keys=False))
+            write_text(path, yaml_dump(model))
+            print(yaml_dump(model))
         else:
-            if not all(math.isfinite(v) and v > 0 for v in [args.max_force_rms, args.max_torque_rms]):
+            if not all(isfinite(v) and v > 0 for v in [args.max_force_rms, args.max_torque_rms]):
                 raise ValueError('Validation thresholds must be finite and positive')
             model = load_model(path)
             if any(dataset[k] != model[k] for k in ['base_frame', 'wrench_frame', 'gravity_base']):

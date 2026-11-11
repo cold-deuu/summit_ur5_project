@@ -144,7 +144,7 @@ SET(CMAKE_BUILD_TYPE "Release")
 
 ADD_LIBRARY(${PROJECT_NAME} SHARED  ${${PROJECT_NAME}_SOURCES} ${${PROJECT_NAME}_HEADERS})
 TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC $<INSTALL_INTERFACE:include> ${CMAKE_CURRENT_SOURCE_DIR}/include)
-TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC ${catkin_LIBRARIES} pinocchio::pinocchio fcl ccd -lpthread)
+TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC ${catkin_LIBRARIES} pinocchio::pinocchio fcl ccd -lpthread stdc++fs)
 
 add_executable(${PROJECT_NAME}_node src/main.cpp)
 add_dependencies(${PROJECT_NAME}_node ${catkin_EXPORTED_TARGETS})

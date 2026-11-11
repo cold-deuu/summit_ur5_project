@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """[BRL_lab] Visual servoing solved by HQP: wrist-camera tomato estimate -> streamed graps_link target.
 
 Replaces BRL's step servo (visual_servoing.py: 2 cm MoveIt Cartesian steps toward a fixed pixel
@@ -24,6 +24,7 @@ damped differential IK under its speed/acceleration/joint limits. Done when grap
 Aborts (no gripper close): no detection, lost target before the approach, estimate jump,
 HQP abort (status ABORTED for this stream), timeout, preempt.
 """
+from __future__ import division, print_function
 import threading
 
 import actionlib
@@ -155,12 +156,12 @@ class HqpServo:
                 point_cam = ray * fx * self.diameter / uncut
                 source = "size"
         if point_cam is not None:
-            return (cam @ np.r_[point_cam, 1.0])[:3], source
+            return cam.dot(np.r_[point_cam, 1.0])[:3], source
         if estimate is None:
             return None, "ray"
         origin = cam[:3, 3]
-        direction = cam[:3, :3] @ (ray / np.linalg.norm(ray))
-        return origin + direction * float((estimate - origin) @ direction), "ray"
+        direction = cam[:3, :3].dot(ray / np.linalg.norm(ray))
+        return origin + direction * float((estimate - origin).dot(direction)), "ray"
 
     def _finish(self, success, message):
         # Stop streaming; HQP brakes and holds (SERVO_ENDED) or already aborted.
@@ -227,7 +228,7 @@ class HqpServo:
                 if point is not None:
                     if first is None:
                         first = estimate = point
-                        rospy.loginfo("[hqp_servo] tomato at (%.3f %.3f %.3f) from %s", *point, source)
+                        rospy.loginfo("[hqp_servo] tomato at (%.3f %.3f %.3f) from %s", point[0], point[1], point[2], source)
                         last_seen = now
                     elif (np.linalg.norm(point - first) > self.max_offset or
                           np.linalg.norm(point - estimate) >= self.max_jump):

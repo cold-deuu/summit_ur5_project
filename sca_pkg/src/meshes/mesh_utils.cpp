@@ -1,8 +1,9 @@
 #include "sca_pkg/meshes/mesh_utils.hpp"
+#include <fstream>  // gcc 7: <experimental/filesystem> does not pull it in
 
 using namespace std;
 using namespace Eigen;
-namespace fs = std::filesystem;
+namespace fs = std::experimental::filesystem;
 
 std::string trim(const std::string& str) {
     size_t first = str.find_first_not_of(" \t\r\n");
