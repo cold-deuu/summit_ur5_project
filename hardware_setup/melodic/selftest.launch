@@ -1,0 +1,25 @@
+<launch>
+  <!-- Robot-free check of the field launch files on THIS PC. Started by selftest.sh on a private
+       ROS master (port 11399); the real robot / desktop master is never touched.
+       mode:=moveit -> ur5e_moveit_field.launch, mode:=actions -> ur5e_actions_field.launch, both
+       unchanged, with the UR driver replaced by fake_ur_driver.py. -->
+  <arg name="mode" default="moveit"/>
+  <arg name="out_dir"/>
+  <arg name="ns" value="/selftest_ur5e"/>
+  <!-- full_model: the moveit launch exports /brl_robot/robot_description as on the field
+       (selftest.sh puts the arm URDF there first); written to out_dir, not ~/.ros/brl_field. -->
+  <node pkg="summit_ur5_hardware_setup" type="fake_ur_driver.py" name="fake_ur_driver" ns="$(arg ns)" output="screen"/>
+  <node pkg="tf" type="static_transform_publisher" name="selftest_tool0_tf"
+        args="0 0 0 0 0 0 ur5e_wrist_3_link ur5e_tool0_controller 20"/>
+  <include if="$(eval mode == 'moveit')" file="$(dirname)/../ur5e_moveit_field.launch">
+    <arg name="arm_namespace" value="$(arg ns)"/>
+    <arg name="full_model_file" value="$(arg out_dir)/field_full.urdf"/>
+    <arg name="start_speed_scaling_controller" value="false"/>
+    <arg name="log_dir" value="$(arg out_dir)/telemetry"/>
+  </include>
+  <include if="$(eval mode == 'actions')" file="$(dirname)/../ur5e_actions_field.launch">
+    <arg name="arm_namespace" value="$(arg ns)"/>
+    <arg name="start_speed_scaling_controller" value="false"/>
+    <arg name="log_dir" value="$(arg out_dir)/telemetry"/>
+  </include>
+</launch>

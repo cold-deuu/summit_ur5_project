@@ -1,0 +1,83 @@
+{
+ "note": "selftest.sh results with the Noetic build (Ubuntu 20.04, 2026-11-11); selftest.py compares final_q / moved_m",
+ "moveit": [
+  {
+   "final_q": [
+    -0.11995,
+    -1.49001,
+    1.50996,
+    -1.53,
+    -1.54005,
+    0.05005
+   ],
+   "step": "moveit_plan_toppra"
+  },
+  {
+   "final_q": [
+    -0.0,
+    -1.57,
+    1.57,
+    -1.57,
+    -1.57,
+    0.0
+   ],
+   "step": "trajectory_back_home"
+  }
+ ],
+ "actions": [
+  {
+   "final_q": [
+    0.2,
+    -1.67,
+    1.72,
+    -1.47,
+    -1.67,
+    0.2
+   ],
+   "step": "joint_pose_A"
+  },
+  {
+   "final_q": [
+    0.0,
+    -1.57,
+    1.57,
+    -1.57,
+    -1.57,
+    0.0
+   ],
+   "step": "joint_home"
+  },
+  {
+   "moved_m": [
+    0.05,
+    0.0,
+    -0.03
+   ],
+   "final_q": [
+    -0.0,
+    -1.44988,
+    1.51855,
+    -1.63867,
+    -1.57,
+    -0.0
+   ],
+   "step": "se3_translate"
+  },
+  {
+   "moved_m": [
+    -0.05,
+    0.0,
+    0.03
+   ],
+   "final_q": [
+    0.0,
+    -1.57,
+    1.57,
+    -1.57,
+    -1.57,
+    0.0
+   ],
+   "step": "se3_translate_back"
+  }
+ ]
+}
