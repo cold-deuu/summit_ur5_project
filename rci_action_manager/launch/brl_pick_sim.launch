@@ -8,7 +8,7 @@
        + BRL perception (knowledge graph, sensor node/YOLO, fixed AMCL pose; brl_lab_vision.launch)
        + BRL motion planner with the lab [BRL_lab] switches; servo:=hqp (default) runs the HQP servo
          (brl_hqp_servo.py: YOLO bbox + wrist depth -> tomato 3D -> streamed graps_link target)
-       + RViz with the BRL panel (Pick Tomato; default goal = lab tomato 0.771 -0.133 0.994,
+       + RViz with the BRL panel (Pick Tomato; default goal 0.08 -0.36 1.20 in front of base-pick,
          the sim tomato sits 1.5 cm +x / 1.0 cm -z from it, see brl_pick_sim_scene.xml).
        The sim gripper is rigid (no finger joints), so "grip" only publishes the command.
        Do not run together with the lab bringup on the same ROS master. -->
@@ -20,6 +20,8 @@
   <arg name="hqp_servo" value="$(eval servo == 'hqp')"/>
   <param if="$(arg hqp_servo)" name="/moveit_optimal_controller/servo_enabled" value="true"/>
   <arg name="model_file" default="$(find summit_ur5e_moveit_config)/config/brl_pick_sim_scene.xml"/>
+  <!-- Pick goal shown in the panel = the scene tomato minus the deliberate +1.5 cm x / -1.0 cm z error -->
+  <rosparam param="/brl_lab_panel/tomato_position">[0.08, -0.36, 1.20]</rosparam>
   <!-- distro libccd: /usr/local/lib/libccd.so.2 on this PC gives wrong FCL distances and crashes RViz -->
   <arg name="ccd_preload" default="$(optenv MOVEIT_CCD_PRELOAD /lib/x86_64-linux-gnu/libccd.so.2)"/>
 
