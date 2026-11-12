@@ -16,6 +16,7 @@
 #include <QApplication>
 #include <QGridLayout>
 #include <std_srvs/Trigger.h>
+#include <ros/ros.h>
 #include <QVBoxLayout>
 #include <cmath>
 #include <map>
@@ -142,6 +143,11 @@ BrlActionPanel::BrlActionPanel(QWidget *parent) : rviz::Panel(parent) {
     // Note: this is in front (+x); its pre-pick IK branches are far from base-pick (>= 96 deg).
     // A tomato on the robot's right, e.g. (0.08, -0.55, 1.10), moves only lift/wrist_1 ~37 deg.
     x_spin_->setValue(0.771); y_spin_->setValue(-0.133); z_spin_->setValue(0.994);
+    // [BRL_lab] a launch can override the default, e.g. the sim tomato (brl_pick_sim.launch)
+    std::vector<double> tomato_default;
+    if (ros::param::get("/brl_lab_panel/tomato_position", tomato_default) && tomato_default.size() == 3) {
+      x_spin_->setValue(tomato_default[0]); y_spin_->setValue(tomato_default[1]); z_spin_->setValue(tomato_default[2]);
+    }
     xyz->addWidget(x_spin_); xyz->addWidget(y_spin_); xyz->addWidget(z_spin_);
     tomato_layout->addRow("Position x y z", xyz);
     pick_button_ = new QPushButton("Pick Tomato");
